@@ -285,6 +285,7 @@ public partial class FacturacionViewModel : ObservableObject
                                     (string.IsNullOrWhiteSpace(c.Mensajes) ? "" : "\n\nObservaciones de ARCA:\n" + c.Mensajes) +
                                     (impresion is null ? "" : "\n\n" + impresion),
                         "Comprobante autorizado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await AbrirPdfPendienteAsync();
                     Limpiar();
                     break;
                 case EstadoComprobante.Pendiente:
@@ -322,8 +323,28 @@ public partial class FacturacionViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            return "ATENCIÓN: la factura es válida, pero no se pudo imprimir (" + ex.Message +
-                   "). Podés reimprimirla desde \"Comprobantes emitidos\".";
+            _pdfPendiente = comprobanteId;
+            return "ATENCIÓN: la factura es válida, pero no se pudo imprimir: " + ex.Message +
+                   ".\nTe abro el PDF para que la veas; podés reimprimirla desde \"Comprobantes emitidos\".";
+        }
+    }
+
+    /// <summary>Comprobante cuyo PDF hay que abrir porque falló la impresión automática.</summary>
+    private int? _pdfPendiente;
+
+    private async Task AbrirPdfPendienteAsync()
+    {
+        if (_pdfPendiente is not int id) return;
+        _pdfPendiente = null;
+        try
+        {
+            using var scope = _scopes.CreateScope();
+            var r = await scope.ServiceProvider.GetRequiredService<IImpresionService>().PrepararAsync(id, FormatoImpresion.A4);
+            if (r.Exito) ImpresoraWindows.Abrir(r.Valor!.Pdf, r.Valor.Comprobante.NombreArchivo);
+        }
+        catch (Exception)
+        {
+            // Si tampoco se puede abrir, queda disponible en "Comprobantes emitidos".
         }
     }
 

@@ -40,7 +40,7 @@ public static class ImpresoraWindows
     {
         var paginas = await RenderizarAsync(pdf);
 
-        using var servidor = new LocalPrintServer();
+        using var servidor = AbrirServidor();
         var cola = Buscar(servidor, impresora) ?? Predeterminada(servidor)
                    ?? throw new InvalidOperationException("No hay ninguna impresora instalada en esta PC.");
 
@@ -64,6 +64,24 @@ public static class ImpresoraWindows
         var escritor = PrintQueue.CreateXpsDocumentWriter(cola);
         escritor.Write(documento, ticket);
         return cola.FullName;
+    }
+
+    public const string MensajeSinSpooler =
+        "el servicio de impresión de Windows (\"Cola de impresión\") está detenido. " +
+        "Abrí Servicios de Windows (tecla Windows, escribí \"servicios\"), buscá \"Cola de impresión\", " +
+        "tocá Iniciar y poné el tipo de inicio en Automático";
+
+    /// <summary>Conecta con el servicio de impresión de Windows, con un mensaje claro si está apagado.</summary>
+    private static LocalPrintServer AbrirServidor()
+    {
+        try
+        {
+            return new LocalPrintServer();
+        }
+        catch (Exception ex) when (ex is PrintServerException or System.ComponentModel.Win32Exception or PrintSystemException)
+        {
+            throw new InvalidOperationException(MensajeSinSpooler, ex);
+        }
     }
 
     /// <summary>Guarda el PDF en una carpeta temporal y lo abre con el visor predeterminado.</summary>

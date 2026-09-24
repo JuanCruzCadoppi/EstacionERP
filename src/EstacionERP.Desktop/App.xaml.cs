@@ -35,6 +35,9 @@ public partial class App : System.Windows.Application
         FrameworkElement.LanguageProperty.OverrideMetadata(
             typeof(FrameworkElement),
             new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
+        FrameworkContentElement.LanguageProperty.OverrideMetadata(
+            typeof(FrameworkContentElement),
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
 
         DispatcherUnhandledException += (_, args) =>
         {
