@@ -1,0 +1,174 @@
+<UserControl x:Class="EstacionERP.Desktop.Views.ClientesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="AlCargar">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource TituloPagina}" Text="Clientes" />
+
+        <!-- Barra de búsqueda y acciones -->
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,16,0,12" LastChildFill="True">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource BotonPrimario}" Content="+ Nuevo cliente" Command="{Binding NuevoCommand}" />
+                <Button Style="{StaticResource BotonSecundario}" Content="Editar" Command="{Binding EditarCommand}" />
+                <Button Style="{StaticResource BotonSecundario}" Content="Activar / Desactivar"
+                        Command="{Binding CambiarEstadoCommand}" Margin="0" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBox Width="320" Text="{Binding Busqueda, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Buscar por nombre, razón social o número de documento">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding BuscarCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Style="{StaticResource BotonSecundario}" Content="Buscar" Margin="8,0,16,0"
+                        Command="{Binding BuscarCommand}" />
+                <CheckBox Content="Ver inactivos" IsChecked="{Binding IncluirInactivos}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Grilla -->
+        <DataGrid x:Name="Grilla" Grid.Row="2" Grid.Column="0"
+                  ItemsSource="{Binding Clientes}"
+                  SelectedItem="{Binding Seleccionado}"
+                  MouseDoubleClick="AlHacerDobleClic">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Razón social / Nombre" Binding="{Binding RazonSocial}" Width="2*" />
+                <DataGridTextColumn Header="Documento" Binding="{Binding Documento}" Width="170" />
+                <DataGridTextColumn Header="Condición IVA" Binding="{Binding CondicionIva}" Width="190" />
+                <DataGridTextColumn Header="Localidad" Binding="{Binding Localidad}" Width="*" />
+                <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="130" />
+                <DataGridCheckBoxColumn Header="Cta. cte." Binding="{Binding TieneCuentaCorriente}" Width="75" />
+                <DataGridTextColumn Header="Límite" Binding="{Binding LimiteCredito, StringFormat=C2}" Width="120">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="65" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Estado -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource TextoSuave}" Margin="0,8,0,0"
+                   Text="{Binding Estado}" />
+
+        <!-- ===== Panel de edición ===== -->
+        <Border Grid.Row="1" Grid.RowSpan="3" Grid.Column="1" Width="380" Margin="20,16,0,0"
+                Style="{StaticResource Tarjeta}" Padding="0"
+                Visibility="{Binding EditorVisible, Converter={StaticResource BoolAVisibilidad}}">
+            <DockPanel DataContext="{Binding Editor}">
+                <!-- Botones fijos abajo -->
+                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource ColorBorde}" BorderThickness="0,1,0,0"
+                        Padding="16,12">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource BotonSecundario}" Content="Cancelar"
+                                Command="{Binding DataContext.CancelarCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                        <Button Style="{StaticResource BotonPrimario}" Content="Guardar" Margin="0" IsDefault="True"
+                                Command="{Binding DataContext.GuardarCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14,16,14">
+                        <TextBlock Style="{StaticResource Subtitulo}" Text="{Binding TituloFormulario}" />
+
+                        <!-- Errores de validación -->
+                        <Border Background="{StaticResource ColorErrorFondo}" BorderBrush="{StaticResource ColorError}"
+                                BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,10,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Errores}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding Errores}" Foreground="{StaticResource ColorError}"
+                                       TextWrapping="Wrap" FontSize="12" />
+                        </Border>
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Razón social / Nombre y apellido *" />
+                        <TextBox Text="{Binding RazonSocial, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Nombre de fantasía" />
+                        <TextBox Text="{Binding NombreFantasia}" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource Etiqueta}" Text="Tipo doc. *" />
+                                <ComboBox ItemsSource="{Binding DataContext.TiposDocumento, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          DisplayMemberPath="Texto" SelectedValuePath="Valor"
+                                          SelectedValue="{Binding TipoDocumento}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource Etiqueta}" Text="Número *" />
+                                <TextBox Text="{Binding NumeroDocumento, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding DocumentoHabilitado}" MaxLength="13" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Condición frente al IVA *" />
+                        <ComboBox ItemsSource="{Binding DataContext.CondicionesIva, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                  DisplayMemberPath="Texto" SelectedValuePath="Valor"
+                                  SelectedValue="{Binding CondicionIva}" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Domicilio" />
+                        <TextBox Text="{Binding Domicilio}" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Localidad" />
+                        <TextBox Text="{Binding Localidad}" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource Etiqueta}" Text="Teléfono" />
+                                <TextBox Text="{Binding Telefono}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource Etiqueta}" Text="Email" />
+                                <TextBox Text="{Binding Email}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <CheckBox Content="Habilitar cuenta corriente" Margin="0,16,0,0"
+                                  IsChecked="{Binding TieneCuentaCorriente}" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Límite de crédito ($)" />
+                        <TextBox Text="{Binding LimiteCredito, StringFormat=N2}" IsEnabled="{Binding TieneCuentaCorriente}"
+                                 HorizontalContentAlignment="Right" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Observaciones" />
+                        <TextBox Text="{Binding Observaciones}" AcceptsReturn="True" TextWrapping="Wrap"
+                                 Height="60" VerticalContentAlignment="Top" />
+
+                        <CheckBox Content="Activo" Margin="0,12,0,0" IsChecked="{Binding Activo}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

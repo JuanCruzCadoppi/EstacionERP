@@ -1,0 +1,58 @@
+<Window x:Class="EstacionERP.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Estación ERP"
+        Width="1280" Height="780" MinWidth="1024" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource Fuente}"
+        Background="{StaticResource ColorFondo}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== Menú lateral ===== -->
+        <Border Grid.Column="0" Background="{StaticResource ColorMenu}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="24,22,16,10">
+                    <TextBlock Text="Estación ERP" Foreground="White" FontSize="19" FontWeight="SemiBold" />
+                    <TextBlock Text="Laguna Larga" Foreground="#7B8794" FontSize="12" Margin="0,2,0,0" />
+                </StackPanel>
+
+                <TextBlock DockPanel.Dock="Bottom" Text="v0.1 · Etapa 1" Foreground="#52606D"
+                           FontSize="11" Margin="28,0,0,14" />
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Inicio" IsChecked="True"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Inicio" />
+
+                        <TextBlock Style="{StaticResource SeccionMenu}" Text="NEGOCIOS" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Playa / Combustibles"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Playa" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Repuestos"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Repuestos" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Lavadero"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Lavadero" />
+
+                        <TextBlock Style="{StaticResource SeccionMenu}" Text="GESTIÓN" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Clientes"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Clientes" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Productos"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Productos" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Cuentas corrientes"
+                                     Command="{Binding NavegarCommand}" CommandParameter="CuentasCorrientes" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Caja"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Caja" />
+                        <RadioButton Style="{StaticResource ItemMenu}" Content="Facturación ARCA"
+                                     Command="{Binding NavegarCommand}" CommandParameter="Facturacion" />
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== Contenido ===== -->
+        <ContentControl Grid.Column="1" Content="{Binding VistaActual}" Margin="28,24,28,20" />
+    </Grid>
+</Window>

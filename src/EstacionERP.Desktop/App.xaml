@@ -1,0 +1,25 @@
+<Application x:Class="EstacionERP.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:EstacionERP.Desktop.ViewModels"
+             xmlns:views="clr-namespace:EstacionERP.Desktop.Views"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Estilos/Tema.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Cada ViewModel se dibuja con su View -->
+            <DataTemplate DataType="{x:Type vm:InicioViewModel}">
+                <views:InicioView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ClientesViewModel}">
+                <views:ClientesView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ProximamenteViewModel}">
+                <views:ProximamenteView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
