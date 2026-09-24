@@ -42,6 +42,8 @@ public partial class App : System.Windows.Application
             {
                 c.SetBasePath(AppContext.BaseDirectory);
                 c.AddJsonFile("appsettings.json", optional: false);
+                // Configuración de cada PC (contraseñas, etc.). No se sube a Git.
+                c.AddJsonFile("appsettings.Local.json", optional: true);
             })
             .ConfigureServices((ctx, services) =>
             {

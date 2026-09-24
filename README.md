@@ -30,11 +30,15 @@ Regla de dependencias: `Desktop → Infrastructure → Application → Domain`. 
 
 ## Cómo ponerlo en marcha (Windows)
 
-1. **Instalar** [Visual Studio 2022](https://visualstudio.microsoft.com/es/) (Community) con la carga de trabajo **"Desarrollo de escritorio de .NET"**.
+1. **Instalar** [Visual Studio 2026 o 2022](https://visualstudio.microsoft.com/es/downloads/) (Community) con la carga de trabajo **"Desarrollo de escritorio de .NET"**.
 2. **Instalar** [PostgreSQL](https://www.postgresql.org/download/windows/) (16 o superior). Durante la instalación anotá la contraseña del usuario `postgres`.
-3. **Configurar la conexión** en `src/EstacionERP.Desktop/appsettings.json`:
+3. **Configurar la conexión**: crear el archivo `src/EstacionERP.Desktop/appsettings.Local.json` (no se sube a Git) con:
    ```json
-   "Estacion": "Host=localhost;Port=5432;Database=estacion_erp;Username=postgres;Password=TU_CONTRASEÑA"
+   {
+     "ConnectionStrings": {
+       "Estacion": "Host=localhost;Port=5432;Database=estacion_erp;Username=postgres;Password=TU_CONTRASEÑA"
+     }
+   }
    ```
 4. Abrir `EstacionERP.sln`, marcar **EstacionERP.Desktop** como proyecto de inicio y apretar **F5**.
 
