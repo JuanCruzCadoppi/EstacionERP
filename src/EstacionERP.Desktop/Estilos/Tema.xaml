@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:comun="clr-namespace:EstacionERP.Desktop.Comun">
 
     <!-- ===== Colores ===== -->
     <SolidColorBrush x:Key="ColorFondo" Color="#F4F5F7" />
@@ -205,4 +206,5 @@
     </Style>
 
     <BooleanToVisibilityConverter x:Key="BoolAVisibilidad" />
+    <comun:NegarConverter x:Key="Negar" />
 </ResourceDictionary>

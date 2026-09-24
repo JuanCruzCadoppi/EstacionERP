@@ -1,4 +1,5 @@
 using EstacionERP.Application.Common;
+using EstacionERP.Application.Seguridad;
 using EstacionERP.Domain.Entidades;
 using EstacionERP.Domain.Enums;
 using EstacionERP.Domain.Validaciones;
@@ -13,8 +14,13 @@ namespace EstacionERP.Application.Clientes;
 public class ClienteService : IClienteService
 {
     private readonly IEstacionDbContext _db;
+    private readonly ISesionActual _sesion;
 
-    public ClienteService(IEstacionDbContext db) => _db = db;
+    public ClienteService(IEstacionDbContext db, ISesionActual sesion)
+    {
+        _db = db;
+        _sesion = sesion;
+    }
 
     public async Task<List<ClienteResumen>> BuscarAsync(string? texto, bool incluirInactivos = false, CancellationToken ct = default)
     {
@@ -73,6 +79,9 @@ public class ClienteService : IClienteService
 
     public async Task<Resultado<int>> GuardarAsync(ClienteDatos datos, CancellationToken ct = default)
     {
+        if (!_sesion.Puede(Permiso.EditarClientes))
+            return Resultado<int>.Error("No tenés permiso para modificar clientes.");
+
         if (datos.Id == Cliente.ConsumidorFinalId)
             return Resultado<int>.Error("El cliente \"Consumidor Final\" es del sistema y no se puede modificar.");
 
@@ -126,6 +135,9 @@ public class ClienteService : IClienteService
 
     public async Task<Resultado> CambiarEstadoAsync(int id, bool activo, CancellationToken ct = default)
     {
+        if (!_sesion.Puede(Permiso.DesactivarClientes))
+            return Resultado.Error("No tenés permiso para activar o desactivar clientes.");
+
         if (id == Cliente.ConsumidorFinalId)
             return Resultado.Error("El cliente \"Consumidor Final\" no se puede desactivar.");
 

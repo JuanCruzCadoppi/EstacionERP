@@ -1,0 +1,103 @@
+<UserControl x:Class="EstacionERP.Desktop.Views.UsuariosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="AlCargar">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource TituloPagina}" Text="Usuarios" />
+
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,16,0,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource BotonPrimario}" Content="+ Nuevo usuario" Command="{Binding NuevoCommand}" />
+                <Button Style="{StaticResource BotonSecundario}" Content="Editar" Margin="0" Command="{Binding EditarCommand}" />
+            </StackPanel>
+            <CheckBox Content="Ver inactivos" IsChecked="{Binding IncluirInactivos}" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <DataGrid Grid.Row="2" Grid.Column="0" ItemsSource="{Binding Usuarios}" SelectedItem="{Binding Seleccionado}"
+                  MouseDoubleClick="AlHacerDobleClic">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Usuario" Binding="{Binding NombreUsuario}" Width="130" />
+                <DataGridTextColumn Header="Nombre" Binding="{Binding NombreCompleto}" Width="*" />
+                <DataGridTextColumn Header="Rol" Binding="{Binding Rol}" Width="120" />
+                <DataGridTextColumn Header="Unidades de negocio" Binding="{Binding Unidades}" Width="1.5*" />
+                <DataGridTextColumn Header="Último acceso" Binding="{Binding UltimoAcceso, StringFormat=dd/MM/yyyy HH:mm}" Width="130" />
+                <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource TextoSuave}" Margin="0,8,0,0" Text="{Binding Estado}" />
+
+        <Border Grid.Row="1" Grid.RowSpan="3" Grid.Column="1" Width="360" Margin="20,16,0,0"
+                Style="{StaticResource Tarjeta}" Padding="0"
+                Visibility="{Binding EditorVisible, Converter={StaticResource BoolAVisibilidad}}">
+            <DockPanel DataContext="{Binding Editor}">
+                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource ColorBorde}" BorderThickness="0,1,0,0" Padding="16,12">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource BotonSecundario}" Content="Cancelar"
+                                Command="{Binding DataContext.CancelarCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                        <Button Style="{StaticResource BotonPrimario}" Content="Guardar" Margin="0"
+                                Command="{Binding DataContext.GuardarCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    </StackPanel>
+                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14">
+                        <TextBlock Style="{StaticResource Subtitulo}" Text="{Binding TituloFormulario}" />
+
+                        <Border Background="{StaticResource ColorErrorFondo}" BorderBrush="{StaticResource ColorError}"
+                                BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,10,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Errores}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding Errores}" Foreground="{StaticResource ColorError}" TextWrapping="Wrap" FontSize="12" />
+                        </Border>
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Usuario (para ingresar) *" />
+                        <TextBox Text="{Binding NombreUsuario, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Lower" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Nombre completo *" />
+                        <TextBox Text="{Binding NombreCompleto}" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Rol *" />
+                        <ComboBox ItemsSource="{Binding DataContext.Roles, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                  DisplayMemberPath="Texto" SelectedValuePath="Valor" SelectedValue="{Binding Rol}" />
+                        <TextBlock Style="{StaticResource TextoSuave}" FontSize="11" Margin="0,4,0,0"
+                                   Text="Administrador: todo. Encargado: productos, precios y clientes. Operador: vende y carga clientes." />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Unidades de negocio donde opera" />
+                        <ItemsControl ItemsSource="{Binding Unidades}" IsEnabled="{Binding UnidadesHabilitadas}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Nombre}" IsChecked="{Binding Seleccionada}" Margin="0,3" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="{Binding EtiquetaPassword}" />
+                        <TextBox Text="{Binding NuevaPassword, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Style="{StaticResource TextoSuave}" FontSize="11" Margin="0,4,0,0"
+                                   Text="Es una contraseña temporal: el usuario la cambia en su primer ingreso." />
+
+                        <CheckBox Content="Activo" Margin="0,14,0,0" IsChecked="{Binding Activo}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

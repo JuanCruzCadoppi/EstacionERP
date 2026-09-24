@@ -17,6 +17,12 @@
             <DataTemplate DataType="{x:Type vm:ClientesViewModel}">
                 <views:ClientesView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ProductosViewModel}">
+                <views:ProductosView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:UsuariosViewModel}">
+                <views:UsuariosView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:ProximamenteViewModel}">
                 <views:ProximamenteView />
             </DataTemplate>

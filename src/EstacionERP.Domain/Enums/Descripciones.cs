@@ -48,4 +48,29 @@ public static class Descripciones
         AlicuotaIva.VeintiSiete => 27m,
         _ => throw new ArgumentOutOfRangeException(nameof(v))
     };
+
+    public static string Texto(this Rol v) => v switch
+    {
+        Rol.Administrador => "Administrador",
+        Rol.Encargado => "Encargado",
+        Rol.Operador => "Operador",
+        _ => v.ToString()
+    };
+
+    public static string Texto(this TipoProducto v) => v switch
+    {
+        TipoProducto.Bien => "Artículo",
+        TipoProducto.Servicio => "Servicio",
+        TipoProducto.Combustible => "Combustible",
+        _ => v.ToString()
+    };
+
+    public static string Texto(this UnidadMedida v) => v switch
+    {
+        UnidadMedida.Unidad => "Unidad",
+        UnidadMedida.Litro => "Litro",
+        UnidadMedida.Kilogramo => "Kilogramo",
+        UnidadMedida.Metro => "Metro",
+        _ => v.ToString()
+    };
 }

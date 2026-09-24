@@ -1,25 +1,39 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using EstacionERP.Application.Seguridad;
+using EstacionERP.Domain.Entidades;
+using EstacionERP.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EstacionERP.Desktop.ViewModels;
 
 /// <summary>
-/// ViewModel de la ventana principal: maneja la navegación del menú lateral.
+/// ViewModel de la ventana principal: navegación del menú lateral y datos de la sesión.
 /// </summary>
 public partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _sp;
+    private readonly ISesionActual _sesion;
 
-    [ObservableProperty]
-    private object? _vistaActual;
+    [ObservableProperty] private object? _vistaActual;
+    [ObservableProperty] private string _titulo = "Inicio";
 
-    [ObservableProperty]
-    private string _titulo = "Inicio";
+    /// <summary>La ventana escucha este evento para cerrarse y volver al login.</summary>
+    public event EventHandler? CerrarSesionSolicitado;
 
-    public MainViewModel(IServiceProvider sp)
+    public string UsuarioNombre => _sesion.Usuario?.NombreCompleto ?? string.Empty;
+    public string UsuarioRol => _sesion.Usuario?.Rol.Texto() ?? string.Empty;
+
+    // Visibilidad del menú según permisos.
+    public bool VerPlaya => _sesion.TieneAcceso(UnidadNegocio.PlayaId);
+    public bool VerRepuestos => _sesion.TieneAcceso(UnidadNegocio.RepuestosId);
+    public bool VerLavadero => _sesion.TieneAcceso(UnidadNegocio.LavaderoId);
+    public bool VerUsuarios => _sesion.Puede(Permiso.GestionarUsuarios);
+
+    public MainViewModel(IServiceProvider sp, ISesionActual sesion)
     {
         _sp = sp;
+        _sesion = sesion;
         Navegar("Inicio");
     }
 
@@ -30,8 +44,8 @@ public partial class MainViewModel : ObservableObject
         {
             "Inicio" => ("Inicio", (object)_sp.GetRequiredService<InicioViewModel>()),
             "Clientes" => ("Clientes", _sp.GetRequiredService<ClientesViewModel>()),
-            "Productos" => ("Productos", new ProximamenteViewModel("Productos",
-                "Alta de artículos, servicios y combustibles por unidad de negocio, con listas de precios.")),
+            "Productos" => ("Productos", _sp.GetRequiredService<ProductosViewModel>()),
+            "Usuarios" when VerUsuarios => ("Usuarios", _sp.GetRequiredService<UsuariosViewModel>()),
             "Playa" => ("Playa / Combustibles", new ProximamenteViewModel("Playa / Combustibles",
                 "Tanques, surtidores, mangueras, turnos de playeros y lectura de aforadores.")),
             "Repuestos" => ("Repuestos", new ProximamenteViewModel("Repuestos",
@@ -47,4 +61,7 @@ public partial class MainViewModel : ObservableObject
             _ => (Titulo, VistaActual)
         };
     }
+
+    [RelayCommand]
+    private void CerrarSesion() => CerrarSesionSolicitado?.Invoke(this, EventArgs.Empty);
 }

@@ -3,6 +3,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EstacionERP.Application.Clientes;
+using EstacionERP.Application.Seguridad;
 using EstacionERP.Desktop.Comun;
 using EstacionERP.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,9 @@ namespace EstacionERP.Desktop.ViewModels;
 public partial class ClientesViewModel : ObservableObject
 {
     private readonly IServiceScopeFactory _scopes;
+    private readonly ISesionActual _sesion;
+
+    public bool PuedeCambiarEstado => _sesion.Puede(Permiso.DesactivarClientes);
 
     public ObservableCollection<ClienteResumen> Clientes { get; } = new();
 
@@ -38,7 +42,11 @@ public partial class ClientesViewModel : ObservableObject
 
     public bool EditorVisible => Editor is not null;
 
-    public ClientesViewModel(IServiceScopeFactory scopes) => _scopes = scopes;
+    public ClientesViewModel(IServiceScopeFactory scopes, ISesionActual sesion)
+    {
+        _scopes = scopes;
+        _sesion = sesion;
+    }
 
     public Task CargarAsync() => BuscarAsync();
 

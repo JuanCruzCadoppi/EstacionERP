@@ -42,7 +42,19 @@ Regla de dependencias: `Desktop → Infrastructure → Application → Domain`. 
    ```
 4. Abrir `EstacionERP.sln`, marcar **EstacionERP.Desktop** como proyecto de inicio y apretar **F5**.
 
-La primera vez la aplicación crea sola la base `estacion_erp`, las tablas y los datos iniciales (las 3 unidades de negocio y el cliente "Consumidor Final").
+La primera vez la aplicación crea sola la base `estacion_erp`, las tablas y los datos iniciales (las 3 unidades de negocio, el cliente "Consumidor Final" y el usuario administrador).
+
+**Primer ingreso:** usuario `admin`, contraseña `admin`. El sistema pide cambiarla en ese momento.
+
+## Roles y permisos
+
+| Rol | Qué puede hacer |
+|---|---|
+| Administrador | Todo, en todas las unidades de negocio, incluida la gestión de usuarios |
+| Encargado | Productos, precios (incluida la actualización masiva por %) y clientes de sus unidades |
+| Operador | Carga y edita clientes; ve los productos de sus unidades (playero, vendedor, lavador) |
+
+Cada usuario (salvo el administrador) tiene asignadas las unidades de negocio donde opera; el menú y los listados se filtran según eso. Los permisos se validan en la capa Application, no solo en las pantallas.
 
 ## Pruebas
 
@@ -64,7 +76,7 @@ La app aplica las migraciones pendientes al iniciar.
 ## Avance
 
 - [x] **Etapa 1a** — Estructura, base de datos, unidades de negocio, ABM de clientes
-- [ ] Etapa 1b — Productos, usuarios y login
+- [x] **Etapa 1b** — Productos, usuarios, login y permisos por rol y unidad de negocio
 - [ ] Etapa 2 — Facturación ARCA en homologación (WSAA + WSFEv1)
 - [ ] Etapa 3 — Repuestos (ventas de mostrador y stock)
 - [ ] Etapa 4 — Caja y cuentas corrientes

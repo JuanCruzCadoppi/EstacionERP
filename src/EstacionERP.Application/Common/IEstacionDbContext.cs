@@ -14,6 +14,8 @@ public interface IEstacionDbContext
     DbSet<Cliente> Clientes { get; }
     DbSet<Vehiculo> Vehiculos { get; }
     DbSet<Producto> Productos { get; }
+    DbSet<Usuario> Usuarios { get; }
+    DbSet<UsuarioUnidadNegocio> UsuariosUnidades { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

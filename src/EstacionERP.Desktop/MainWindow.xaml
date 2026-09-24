@@ -20,8 +20,23 @@
                     <TextBlock Text="Laguna Larga" Foreground="#7B8794" FontSize="12" Margin="0,2,0,0" />
                 </StackPanel>
 
-                <TextBlock DockPanel.Dock="Bottom" Text="v0.1 · Etapa 1" Foreground="#52606D"
-                           FontSize="11" Margin="28,0,0,14" />
+                <!-- Usuario conectado -->
+                <Border DockPanel.Dock="Bottom" BorderBrush="#2C3E50" BorderThickness="0,1,0,0" Padding="24,12,16,14">
+                    <StackPanel>
+                        <TextBlock Text="{Binding UsuarioNombre}" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding UsuarioRol}" Foreground="#7B8794" FontSize="11" Margin="0,1,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontSize="12" Margin="0,0,14,0">
+                                <Hyperlink Foreground="#9AA5B1" Click="AlCambiarPassword">Contraseña</Hyperlink>
+                            </TextBlock>
+                            <TextBlock FontSize="12">
+                                <Hyperlink Foreground="#9AA5B1" Command="{Binding CerrarSesionCommand}">Cerrar sesión</Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+                        <TextBlock Text="v0.2 · Etapa 1" Foreground="#52606D" FontSize="11" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
@@ -30,11 +45,14 @@
 
                         <TextBlock Style="{StaticResource SeccionMenu}" Text="NEGOCIOS" />
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Playa / Combustibles"
-                                     Command="{Binding NavegarCommand}" CommandParameter="Playa" />
+                                     Command="{Binding NavegarCommand}" CommandParameter="Playa"
+                                     Visibility="{Binding VerPlaya, Converter={StaticResource BoolAVisibilidad}}" />
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Repuestos"
-                                     Command="{Binding NavegarCommand}" CommandParameter="Repuestos" />
+                                     Command="{Binding NavegarCommand}" CommandParameter="Repuestos"
+                                     Visibility="{Binding VerRepuestos, Converter={StaticResource BoolAVisibilidad}}" />
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Lavadero"
-                                     Command="{Binding NavegarCommand}" CommandParameter="Lavadero" />
+                                     Command="{Binding NavegarCommand}" CommandParameter="Lavadero"
+                                     Visibility="{Binding VerLavadero, Converter={StaticResource BoolAVisibilidad}}" />
 
                         <TextBlock Style="{StaticResource SeccionMenu}" Text="GESTIÓN" />
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Clientes"
@@ -47,6 +65,12 @@
                                      Command="{Binding NavegarCommand}" CommandParameter="Caja" />
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Facturación ARCA"
                                      Command="{Binding NavegarCommand}" CommandParameter="Facturacion" />
+
+                        <StackPanel Visibility="{Binding VerUsuarios, Converter={StaticResource BoolAVisibilidad}}">
+                            <TextBlock Style="{StaticResource SeccionMenu}" Text="ADMINISTRACIÓN" />
+                            <RadioButton Style="{StaticResource ItemMenu}" Content="Usuarios"
+                                         Command="{Binding NavegarCommand}" CommandParameter="Usuarios" />
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>

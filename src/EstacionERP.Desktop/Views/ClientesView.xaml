@@ -23,7 +23,8 @@
                 <Button Style="{StaticResource BotonPrimario}" Content="+ Nuevo cliente" Command="{Binding NuevoCommand}" />
                 <Button Style="{StaticResource BotonSecundario}" Content="Editar" Command="{Binding EditarCommand}" />
                 <Button Style="{StaticResource BotonSecundario}" Content="Activar / Desactivar"
-                        Command="{Binding CambiarEstadoCommand}" Margin="0" />
+                        Command="{Binding CambiarEstadoCommand}" Margin="0"
+                        Visibility="{Binding PuedeCambiarEstado, Converter={StaticResource BoolAVisibilidad}}" />
             </StackPanel>
 
             <StackPanel Orientation="Horizontal">

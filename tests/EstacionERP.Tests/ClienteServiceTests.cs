@@ -1,3 +1,4 @@
+using EstacionERP.Domain.Entidades;
 using EstacionERP.Application.Clientes;
 using EstacionERP.Domain.Entidades;
 using EstacionERP.Domain.Enums;
@@ -35,7 +36,7 @@ public class ClienteServiceTests : IDisposable
     public async Task Crea_cliente_y_normaliza_datos()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
 
         var r = await servicio.GuardarAsync(Transportista());
 
@@ -50,7 +51,7 @@ public class ClienteServiceTests : IDisposable
     public async Task No_permite_documento_duplicado()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
 
         await servicio.GuardarAsync(Transportista());
         var r = await servicio.GuardarAsync(Transportista());
@@ -63,7 +64,7 @@ public class ClienteServiceTests : IDisposable
     public async Task Responsable_inscripto_requiere_cuit()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
         var datos = Transportista();
         datos.TipoDocumento = TipoDocumento.Dni;
         datos.NumeroDocumento = "12345678";
@@ -78,7 +79,7 @@ public class ClienteServiceTests : IDisposable
     public async Task Cuit_con_digito_verificador_incorrecto_es_rechazado()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
         var datos = Transportista();
         datos.NumeroDocumento = "20-12345678-0";
 
@@ -91,7 +92,7 @@ public class ClienteServiceTests : IDisposable
     public async Task Busca_por_nombre_y_por_documento()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
         await servicio.GuardarAsync(Transportista());
 
         Assert.Single(await servicio.BuscarAsync("pérez"));
@@ -103,7 +104,7 @@ public class ClienteServiceTests : IDisposable
     public async Task Desactivar_oculta_de_la_busqueda_pero_no_borra()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
         var id = (await servicio.GuardarAsync(Transportista())).Valor;
 
         var r = await servicio.CambiarEstadoAsync(id, activo: false);
@@ -117,7 +118,7 @@ public class ClienteServiceTests : IDisposable
     public async Task Consumidor_final_no_se_puede_modificar_ni_desactivar()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
 
         var datos = await servicio.ObtenerAsync(Cliente.ConsumidorFinalId);
         datos!.RazonSocial = "OTRO";
@@ -130,12 +131,31 @@ public class ClienteServiceTests : IDisposable
     public async Task Sin_cuenta_corriente_el_limite_queda_en_cero()
     {
         using var db = _bd.CrearContexto();
-        var servicio = new ClienteService(db);
+        var servicio = new ClienteService(db, Sesiones.Admin());
         var datos = Transportista();
         datos.TieneCuentaCorriente = false;
 
         var id = (await servicio.GuardarAsync(datos)).Valor;
 
         Assert.Equal(0m, (await servicio.ObtenerAsync(id))!.LimiteCredito);
+    }
+}
+
+public class ClientePermisosTests : IDisposable
+{
+    private readonly BaseDeDatosDePrueba _bd = new();
+    public void Dispose() => _bd.Dispose();
+
+    [Fact]
+    public async Task Operador_puede_cargar_clientes_pero_no_desactivarlos()
+    {
+        using var db = _bd.CrearContexto();
+        var servicio = new ClienteService(db, Sesiones.Operador(UnidadNegocio.PlayaId));
+
+        var r = await servicio.GuardarAsync(new ClienteDatos { TipoDocumento = TipoDocumento.Dni, NumeroDocumento = "30111222", RazonSocial = "Juan" });
+        Assert.True(r.Exito);
+
+        var d = await servicio.CambiarEstadoAsync(r.Valor, false);
+        Assert.False(d.Exito);
     }
 }

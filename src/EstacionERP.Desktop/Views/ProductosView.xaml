@@ -1,0 +1,256 @@
+<UserControl x:Class="EstacionERP.Desktop.Views.ProductosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="AlCargar">
+    <UserControl.Resources>
+        <Style x:Key="CeldaDerecha" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="OcultarSiNull" TargetType="Border">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Errores}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource TituloPagina}" Text="Productos y servicios" />
+
+        <!-- Barra de filtros y acciones -->
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,16,0,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource BotonPrimario}" Content="+ Nuevo" Command="{Binding NuevoCommand}"
+                        Visibility="{Binding PuedeEditar, Converter={StaticResource BoolAVisibilidad}}" />
+                <Button Style="{StaticResource BotonSecundario}" Content="Editar" Command="{Binding EditarCommand}"
+                        Visibility="{Binding PuedeEditar, Converter={StaticResource BoolAVisibilidad}}" />
+                <Button Style="{StaticResource BotonSecundario}" Content="Actualizar precios %" Margin="0"
+                        Command="{Binding MostrarAumentoCommand}"
+                        Visibility="{Binding PuedeModificarPrecios, Converter={StaticResource BoolAVisibilidad}}" />
+            </StackPanel>
+
+            <WrapPanel>
+                <ComboBox Width="190" Margin="0,0,8,0" ItemsSource="{Binding FiltroUnidades}"
+                          DisplayMemberPath="Texto" SelectedValuePath="Valor" SelectedValue="{Binding FiltroUnidadId}" />
+                <TextBox Width="260" Text="{Binding Busqueda, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Código, descripción, marca, código de fabricante o de barras">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding BuscarCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Style="{StaticResource BotonSecundario}" Content="Buscar" Margin="8,0,16,0"
+                        Command="{Binding BuscarCommand}" />
+                <CheckBox Content="Ver inactivos" IsChecked="{Binding IncluirInactivos}" VerticalAlignment="Center" />
+            </WrapPanel>
+        </DockPanel>
+
+        <!-- Grilla -->
+        <DataGrid Grid.Row="2" Grid.Column="0" ItemsSource="{Binding Productos}" SelectedItem="{Binding Seleccionado}"
+                  MouseDoubleClick="AlHacerDobleClic">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" />
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="2*" />
+                <DataGridTextColumn Header="Unidad" Binding="{Binding UnidadNegocio}" Width="140" />
+                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="95" />
+                <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="*" />
+                <DataGridTextColumn Header="Rubro" Binding="{Binding Rubro}" Width="*" />
+                <DataGridTextColumn Header="IVA" Binding="{Binding AlicuotaIva}" Width="60" />
+                <DataGridTextColumn Header="Costo" Binding="{Binding Costo, StringFormat=C2}" Width="105"
+                                    ElementStyle="{StaticResource CeldaDerecha}" />
+                <DataGridTextColumn Header="Precio final" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="110"
+                                    ElementStyle="{StaticResource CeldaDerecha}" />
+                <DataGridTextColumn Header="Margen" Binding="{Binding MargenPorcentaje, StringFormat={}{0:N1} %}" Width="75"
+                                    ElementStyle="{StaticResource CeldaDerecha}" />
+                <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource TextoSuave}" Margin="0,8,0,0" Text="{Binding Estado}" />
+
+        <!-- ===== Panel lateral ===== -->
+        <Border Grid.Row="1" Grid.RowSpan="3" Grid.Column="1" Width="400" Margin="20,16,0,0"
+                Style="{StaticResource Tarjeta}" Padding="0"
+                Visibility="{Binding PanelLateralVisible, Converter={StaticResource BoolAVisibilidad}}">
+            <Grid>
+                <!-- Formulario de producto -->
+                <DockPanel DataContext="{Binding Editor}"
+                           Visibility="{Binding DataContext.EditorVisible, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolAVisibilidad}}">
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource ColorBorde}" BorderThickness="0,1,0,0" Padding="16,12">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource BotonSecundario}" Content="Cancelar"
+                                    Command="{Binding DataContext.CancelarCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                            <Button Style="{StaticResource BotonPrimario}" Content="Guardar" Margin="0"
+                                    Command="{Binding DataContext.GuardarCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="16,14">
+                            <TextBlock Style="{StaticResource Subtitulo}" Text="{Binding TituloFormulario}" />
+
+                            <Border Style="{StaticResource OcultarSiNull}" Background="{StaticResource ColorErrorFondo}"
+                                    BorderBrush="{StaticResource ColorError}" BorderThickness="1" CornerRadius="6"
+                                    Padding="10,8" Margin="0,10,0,0">
+                                <TextBlock Text="{Binding Errores}" Foreground="{StaticResource ColorError}" TextWrapping="Wrap" FontSize="12" />
+                            </Border>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Tipo *" />
+                                    <ComboBox ItemsSource="{Binding DataContext.TiposProducto, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              DisplayMemberPath="Texto" SelectedValuePath="Valor" SelectedValue="{Binding Tipo}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Unidad de negocio *" />
+                                    <ComboBox ItemsSource="{Binding DataContext.Unidades, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              DisplayMemberPath="Texto" SelectedValuePath="Valor" SelectedValue="{Binding UnidadNegocioId}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Código *" />
+                                    <TextBox Text="{Binding Codigo, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Código de barras" />
+                                    <TextBox Text="{Binding CodigoBarras}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Descripción *" />
+                            <TextBox Text="{Binding Descripcion, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Marca" />
+                                    <TextBox Text="{Binding Marca}" CharacterCasing="Upper" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Rubro" />
+                                    <TextBox Text="{Binding Rubro}" CharacterCasing="Upper" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Código de fabricante" />
+                            <TextBox Text="{Binding CodigoFabricante}" CharacterCasing="Upper" />
+
+                            <TextBlock Style="{StaticResource Subtitulo}" Text="Precio" Margin="0,18,0,0" FontSize="14" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Costo sin IVA ($)" />
+                                    <TextBox Text="{Binding Costo, StringFormat=N2}" HorizontalContentAlignment="Right"
+                                             IsEnabled="{Binding PuedeModificarPrecios}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Alícuota IVA" />
+                                    <ComboBox ItemsSource="{Binding DataContext.Alicuotas, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              DisplayMemberPath="Texto" SelectedValuePath="Valor" SelectedValue="{Binding AlicuotaIva}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Precio de venta final, con IVA ($) *" />
+                            <TextBox Text="{Binding PrecioVenta, StringFormat=N2}" HorizontalContentAlignment="Right"
+                                     FontSize="15" FontWeight="SemiBold" IsEnabled="{Binding PuedeModificarPrecios}" />
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Style="{StaticResource TextoSuave}" FontSize="12">
+                                    <Run Text="Sin IVA: " /><Run Text="{Binding PrecioNetoTexto, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Grid.Column="1" Style="{StaticResource TextoSuave}" FontSize="12" TextAlignment="Right">
+                                    <Run Text="Margen: " /><Run Text="{Binding MargenTexto, Mode=OneWay}" FontWeight="SemiBold" />
+                                </TextBlock>
+                            </Grid>
+
+                            <TextBlock Style="{StaticResource Subtitulo}" Text="Stock" Margin="0,18,0,0" FontSize="14" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Unidad de medida" />
+                                    <ComboBox ItemsSource="{Binding DataContext.UnidadesMedida, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              DisplayMemberPath="Texto" SelectedValuePath="Valor" SelectedValue="{Binding UnidadMedida}"
+                                              IsEnabled="{Binding UnidadMedidaHabilitada}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Etiqueta}" Text="Stock mínimo" />
+                                    <TextBox Text="{Binding StockMinimo, StringFormat=N2}" HorizontalContentAlignment="Right"
+                                             IsEnabled="{Binding ControlaStock}" />
+                                </StackPanel>
+                            </Grid>
+                            <CheckBox Content="Controla stock" Margin="0,12,0,0" IsChecked="{Binding ControlaStock}"
+                                      IsEnabled="{Binding StockHabilitado}" />
+                            <CheckBox Content="Activo" Margin="0,8,0,0" IsChecked="{Binding Activo}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!-- Actualización masiva de precios -->
+                <DockPanel Visibility="{Binding AumentoVisible, Converter={StaticResource BoolAVisibilidad}}">
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource ColorBorde}" BorderThickness="0,1,0,0" Padding="16,12">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource BotonSecundario}" Content="Cancelar" Command="{Binding CancelarCommand}" />
+                            <Button Style="{StaticResource BotonPrimario}" Content="Aplicar" Margin="0" Command="{Binding AplicarAumentoCommand}" />
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Margin="16,14">
+                        <TextBlock Style="{StaticResource Subtitulo}" Text="Actualizar precios por porcentaje" />
+                        <TextBlock Style="{StaticResource TextoSuave}" Margin="0,6,0,0" FontSize="12"
+                                   Text="Se aplica a los productos activos de la unidad elegida en el filtro de arriba. Podés limitarlo por rubro y/o marca. Para bajar precios usá un porcentaje negativo." />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Porcentaje (ej. 8,5)" />
+                        <TextBox Text="{Binding AumentoPorcentaje, StringFormat=N2}" HorizontalContentAlignment="Right"
+                                 FontSize="15" FontWeight="SemiBold" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Solo del rubro (opcional)" />
+                        <TextBox Text="{Binding AumentoRubro}" CharacterCasing="Upper" />
+
+                        <TextBlock Style="{StaticResource Etiqueta}" Text="Solo de la marca (opcional)" />
+                        <TextBox Text="{Binding AumentoMarca}" CharacterCasing="Upper" />
+
+                        <CheckBox Content="Actualizar también el costo" Margin="0,14,0,0" IsChecked="{Binding AumentoTambienCosto}" />
+                    </StackPanel>
+                </DockPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

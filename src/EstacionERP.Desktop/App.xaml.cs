@@ -3,7 +3,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Markup;
 using EstacionERP.Application;
+using EstacionERP.Application.Seguridad;
 using EstacionERP.Desktop.ViewModels;
+using EstacionERP.Desktop.Views;
 using EstacionERP.Infrastructure;
 using EstacionERP.Infrastructure.Persistencia;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,9 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        // La app decide cuándo cerrarse (entre el login y la ventana principal no hay ventanas abiertas).
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         // Formato argentino para números y fechas (1.234,56 y dd/MM/yyyy).
         var cultura = new CultureInfo("es-AR");
         CultureInfo.DefaultThreadCurrentCulture = cultura;
@@ -33,7 +38,8 @@ public partial class App : System.Windows.Application
 
         DispatcherUnhandledException += (_, args) =>
         {
-            MessageBox.Show(args.Exception.Message, "Error inesperado", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(args.Exception.GetBaseException().Message, "Error inesperado",
+                MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
 
@@ -53,10 +59,14 @@ public partial class App : System.Windows.Application
                 services.AddApplication();
                 services.AddInfrastructure(cs);
 
-                services.AddSingleton<MainViewModel>();
+                services.AddTransient<LoginViewModel>();
+                services.AddTransient<CambiarPasswordViewModel>();
+                services.AddTransient<MainViewModel>();
                 services.AddTransient<InicioViewModel>();
                 services.AddTransient<ClientesViewModel>();
-                services.AddSingleton<MainWindow>();
+                services.AddTransient<ProductosViewModel>();
+                services.AddTransient<UsuariosViewModel>();
+                services.AddTransient<MainWindow>();
             })
             .Build();
 
@@ -68,9 +78,49 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        var ventana = Servicios.GetRequiredService<MainWindow>();
-        MainWindow = ventana;
-        ventana.Show();
+        MostrarLogin();
+    }
+
+    /// <summary>
+    /// Muestra el login (y el cambio de contraseña si corresponde). Si todo sale bien abre la ventana principal.
+    /// </summary>
+    public void MostrarLogin()
+    {
+        var sesion = Servicios.GetRequiredService<ISesionActual>();
+
+        var login = new LoginWindow(Servicios.GetRequiredService<LoginViewModel>());
+        if (login.ShowDialog() != true)
+        {
+            Shutdown();
+            return;
+        }
+
+        if (sesion.Usuario!.DebeCambiarPassword)
+        {
+            var cambio = new CambiarPasswordWindow(Servicios.GetRequiredService<CambiarPasswordViewModel>(), obligatorio: true);
+            if (cambio.ShowDialog() != true)
+            {
+                sesion.Cerrar();
+                Shutdown();
+                return;
+            }
+        }
+
+        var principal = Servicios.GetRequiredService<MainWindow>();
+        MainWindow = principal;
+        principal.Closed += (_, _) =>
+        {
+            if (principal.CerrandoSesion)
+            {
+                sesion.Cerrar();
+                MostrarLogin();
+            }
+            else
+            {
+                Shutdown();
+            }
+        };
+        principal.Show();
     }
 
     /// <summary>
@@ -90,7 +140,7 @@ public partial class App : System.Windows.Application
             MessageBox.Show(
                 "No se pudo conectar con la base de datos.\n\n" +
                 "Revisá que PostgreSQL esté instalado y en ejecución, y que la cadena de conexión " +
-                $"en {Path.Combine(AppContext.BaseDirectory, "appsettings.json")} sea correcta.\n\n" +
+                $"en {Path.Combine(AppContext.BaseDirectory, "appsettings.Local.json")} sea correcta.\n\n" +
                 $"Detalle: {ex.GetBaseException().Message}",
                 "Estación ERP", MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
