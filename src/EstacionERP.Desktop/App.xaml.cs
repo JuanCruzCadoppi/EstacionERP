@@ -20,6 +20,7 @@ public partial class App : System.Windows.Application
     private IHost? _host;
 
     public static IServiceProvider Servicios { get; private set; } = null!;
+    private static bool _culturaAplicada;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -32,12 +33,18 @@ public partial class App : System.Windows.Application
         var cultura = new CultureInfo("es-AR");
         CultureInfo.DefaultThreadCurrentCulture = cultura;
         CultureInfo.DefaultThreadCurrentUICulture = cultura;
-        FrameworkElement.LanguageProperty.OverrideMetadata(
-            typeof(FrameworkElement),
-            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
-        FrameworkContentElement.LanguageProperty.OverrideMetadata(
-            typeof(FrameworkContentElement),
-            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
+        // OverrideMetadata solo se puede llamar una vez por tipo en todo el proceso: si la app se reinicia
+        // en caliente desde Visual Studio sin cerrar del todo, la segunda llamada tira ArgumentException.
+        if (!_culturaAplicada)
+        {
+            _culturaAplicada = true;
+            FrameworkElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkElement),
+                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
+            FrameworkContentElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkContentElement),
+                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
+        }
 
         DispatcherUnhandledException += (_, args) =>
         {
