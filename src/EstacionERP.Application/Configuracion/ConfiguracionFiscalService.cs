@@ -154,9 +154,10 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
         {
             cert = CertificadoArca.LeerCertificado(contenido);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return Resultado<DateTime>.Error("El archivo no es un certificado válido. Tiene que ser el que descargaste de ARCA (.crt o .pem).");
+            return Resultado<DateTime>.Error("El archivo no es un certificado válido: " + ex.Message +
+                                             ". Tiene que ser el texto que devolvió ARCA (empieza con -----BEGIN CERTIFICATE-----).");
         }
 
         if (cert.Cuit is not null && cert.Cuit != c.Cuit)

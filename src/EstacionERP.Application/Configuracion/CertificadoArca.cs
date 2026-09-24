@@ -44,22 +44,90 @@ public static class CertificadoArca
     /// </summary>
     public static DatosCertificado LeerCertificado(string contenido)
     {
-        var der = Decodificar(contenido);
-        var cert = new X509Certificate2(der);
+        byte[] der;
         try
         {
-            var raw = cert.RawData;
-            var pem = new string(PemEncoding.Write("CERTIFICATE", raw)) + "\n";
-            return new DatosCertificado(
-                pem,
-                cert.NotAfter,
-                CuitDelSujeto(cert.SubjectName),
-                cert.PublicKey.ExportSubjectPublicKeyInfo());
+            der = Decodificar(contenido);
         }
-        finally
+        catch (Exception ex)
         {
-            cert.Dispose();
+            throw new FormatException("no se encontró un certificado en el archivo (" + ex.Message + ")", ex);
         }
+
+        try
+        {
+            return LeerDer(der);
+        }
+        catch (Exception ex)
+        {
+            throw new FormatException("el contenido no tiene formato de certificado X.509 (" + ex.Message + ")", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lee el certificado X.509 (DER) con código propio, sin usar el almacén de certificados de Windows.
+    /// Certificate ::= SEQUENCE { tbsCertificate, signatureAlgorithm, signature }
+    /// tbsCertificate ::= SEQUENCE { [0] version, serialNumber, signature, issuer, validity, subject, subjectPublicKeyInfo, ... }
+    /// </summary>
+    private static DatosCertificado LeerDer(byte[] der)
+    {
+        var certificado = new AsnReader(der, AsnEncodingRules.DER).ReadSequence();
+        var tbs = certificado.ReadSequence();
+
+        if (tbs.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 0)))
+            tbs.ReadEncodedValue();                 // version
+        tbs.ReadEncodedValue();                     // serialNumber
+        tbs.ReadEncodedValue();                     // signature algorithm
+        tbs.ReadEncodedValue();                     // issuer
+
+        var validez = tbs.ReadSequence();
+        LeerFecha(validez);                         // notBefore
+        var vence = LeerFecha(validez);             // notAfter
+
+        var sujeto = tbs.ReadSequence();
+        var cuit = CuitDelSujeto(sujeto);
+
+        var clavePublica = tbs.ReadEncodedValue().ToArray();   // SubjectPublicKeyInfo completo
+
+        var pem = new string(PemEncoding.Write("CERTIFICATE", der)) + "\n";
+        return new DatosCertificado(pem, vence.ToLocalTime().DateTime, cuit, clavePublica);
+    }
+
+    private static DateTimeOffset LeerFecha(AsnReader r) =>
+        r.PeekTag().HasSameClassAndValue(Asn1Tag.UtcTime) ? r.ReadUtcTime() : r.ReadGeneralizedTime();
+
+    /// <summary>Busca serialNumber=CUIT nnnnnnnnnnn dentro del sujeto (Name ::= SEQUENCE OF SET OF AttributeTypeAndValue).</summary>
+    private static string? CuitDelSujeto(AsnReader sujeto)
+    {
+        while (sujeto.HasData)
+        {
+            var conjunto = sujeto.ReadSetOf(skipSortOrderValidation: true);
+            while (conjunto.HasData)
+            {
+                var atributo = conjunto.ReadSequence();
+                var oid = atributo.ReadObjectIdentifier();
+                var tag = atributo.PeekTag();
+                string valor;
+                try
+                {
+                    valor = tag.TagClass == TagClass.Universal
+                        ? atributo.ReadCharacterString((UniversalTagNumber)tag.TagValue)
+                        : string.Empty;
+                }
+                catch (Exception)
+                {
+                    atributo.ReadEncodedValue();
+                    valor = string.Empty;
+                }
+
+                if (oid == OidSerialNumber)
+                {
+                    var digitos = new string(valor.Where(char.IsDigit).ToArray());
+                    if (digitos.Length == 11) return digitos;
+                }
+            }
+        }
+        return null;
     }
 
     private static byte[] Decodificar(string contenido)
@@ -69,9 +137,12 @@ public static class CertificadoArca
         {
             // Normaliza saltos de línea y espacios que pueda agregar el Bloc de notas o el navegador.
             var texto = contenido.Replace("\r", "");
-            if (!PemEncoding.TryFind(texto, out var campos))
-                throw new FormatException("PEM inválido");
-            var base64 = texto[campos.Base64Data];
+            const string inicio = "-----BEGIN CERTIFICATE-----";
+            const string fin = "-----END CERTIFICATE-----";
+            var desde = texto.IndexOf(inicio, StringComparison.Ordinal) + inicio.Length;
+            var hasta = texto.IndexOf(fin, desde, StringComparison.Ordinal);
+            if (hasta < 0) throw new FormatException("falta la línea END CERTIFICATE");
+            var base64 = texto[desde..hasta];
             return Convert.FromBase64String(new string(base64.Where(ch => !char.IsWhiteSpace(ch)).ToArray()));
         }
 
@@ -91,22 +162,6 @@ public static class CertificadoArca
         using var rsa = RSA.Create();
         rsa.ImportFromPem(clavePrivadaPem);
         return cert.ClavePublica.AsSpan().SequenceEqual(rsa.ExportSubjectPublicKeyInfo());
-    }
-
-    /// <summary>CUIT que figura en el sujeto del certificado (serialNumber=CUIT nnnnnnnnnnn).</summary>
-    private static string? CuitDelSujeto(X500DistinguishedName sujeto)
-    {
-        foreach (var rdn in sujeto.EnumerateRelativeDistinguishedNames())
-        {
-            if (rdn.HasMultipleElements) continue;
-            if (rdn.GetSingleElementType().Value == OidSerialNumber)
-            {
-                var valor = rdn.GetSingleElementValue() ?? string.Empty;
-                var digitos = new string(valor.Where(char.IsDigit).ToArray());
-                return digitos.Length == 11 ? digitos : null;
-            }
-        }
-        return null;
     }
 
     /// <summary>
