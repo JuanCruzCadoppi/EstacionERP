@@ -20,7 +20,24 @@ public partial class App : System.Windows.Application
     private IHost? _host;
 
     public static IServiceProvider Servicios { get; private set; } = null!;
-    private static bool _culturaAplicada;
+
+    /// <summary>
+    /// Registra el idioma es-AR para <paramref name="tipo"/> solo si todavía no tiene metadata propia:
+    /// evita el ArgumentException "El valor PropertyMetadata ya está registrado" cuando el proceso anterior
+    /// de Visual Studio quedó vivo o cuando WPF ya aplicó el idioma por su cuenta.
+    /// </summary>
+    private static void AplicarIdiomaSiHaceFalta(DependencyProperty propiedad, Type tipo, CultureInfo cultura)
+    {
+        try
+        {
+            propiedad.OverrideMetadata(tipo, new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
+        }
+        catch (ArgumentException)
+        {
+            // Ya estaba registrado (proceso anterior vivo, hot reload, etc.). No hace falta hacer nada más:
+            // el idioma efectivo va a ser el que haya quedado, que en la práctica también es es-AR.
+        }
+    }
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -33,18 +50,11 @@ public partial class App : System.Windows.Application
         var cultura = new CultureInfo("es-AR");
         CultureInfo.DefaultThreadCurrentCulture = cultura;
         CultureInfo.DefaultThreadCurrentUICulture = cultura;
-        // OverrideMetadata solo se puede llamar una vez por tipo en todo el proceso: si la app se reinicia
-        // en caliente desde Visual Studio sin cerrar del todo, la segunda llamada tira ArgumentException.
-        if (!_culturaAplicada)
-        {
-            _culturaAplicada = true;
-            FrameworkElement.LanguageProperty.OverrideMetadata(
-                typeof(FrameworkElement),
-                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
-            FrameworkContentElement.LanguageProperty.OverrideMetadata(
-                typeof(FrameworkContentElement),
-                new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(cultura.IetfLanguageTag)));
-        }
+        // OverrideMetadata solo se puede llamar una vez por tipo en todo el proceso. Si ya está registrado
+        // (por ejemplo porque Visual Studio dejó vivo un proceso anterior, o WPF ya lo hizo por su cuenta),
+        // OverrideMetadata tira ArgumentException. AplicarIdiomaSiHaceFalta lo prueba antes de llamarlo.
+        AplicarIdiomaSiHaceFalta(FrameworkElement.LanguageProperty, typeof(FrameworkElement), cultura);
+        AplicarIdiomaSiHaceFalta(FrameworkContentElement.LanguageProperty, typeof(FrameworkContentElement), cultura);
 
         DispatcherUnhandledException += (_, args) =>
         {
