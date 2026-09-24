@@ -34,40 +34,71 @@ public static class CertificadoArca
         return new Solicitud(csr, clave);
     }
 
-    /// <summary>Acepta el certificado en PEM (texto con BEGIN CERTIFICATE) o DER/base64.</summary>
-    public static X509Certificate2 LeerCertificado(string contenido)
+    /// <summary>Datos del certificado ya extraídos (sin objetos de Windows que haya que liberar).</summary>
+    public record DatosCertificado(string Pem, DateTime Vence, string? Cuit, byte[] ClavePublica);
+
+    /// <summary>
+    /// Lee el certificado de ARCA (PEM con BEGIN CERTIFICATE, o DER/base64) y extrae lo que necesitamos.
+    /// Se decodifica el PEM a mano y se lee todo de una vez: en Windows, usar el objeto
+    /// X509Certificate2 fuera de su ciclo de vida da "m_safeCertContext is an invalid handle".
+    /// </summary>
+    public static DatosCertificado LeerCertificado(string contenido)
     {
-        contenido = contenido.Trim();
+        var der = Decodificar(contenido);
+        var cert = new X509Certificate2(der);
+        try
+        {
+            var raw = cert.RawData;
+            var pem = new string(PemEncoding.Write("CERTIFICATE", raw)) + "\n";
+            return new DatosCertificado(
+                pem,
+                cert.NotAfter,
+                CuitDelSujeto(cert.SubjectName),
+                cert.PublicKey.ExportSubjectPublicKeyInfo());
+        }
+        finally
+        {
+            cert.Dispose();
+        }
+    }
+
+    private static byte[] Decodificar(string contenido)
+    {
+        contenido = contenido.Trim().TrimStart('\uFEFF');
         if (contenido.Contains("BEGIN CERTIFICATE"))
-            return X509Certificate2.CreateFromPem(contenido);
+        {
+            // Normaliza saltos de línea y espacios que pueda agregar el Bloc de notas o el navegador.
+            var texto = contenido.Replace("\r", "");
+            if (!PemEncoding.TryFind(texto, out var campos))
+                throw new FormatException("PEM inválido");
+            var base64 = texto[campos.Base64Data];
+            return Convert.FromBase64String(new string(base64.Where(ch => !char.IsWhiteSpace(ch)).ToArray()));
+        }
 
         try
         {
-            return new X509Certificate2(Convert.FromBase64String(contenido));
+            return Convert.FromBase64String(new string(contenido.Where(ch => !char.IsWhiteSpace(ch)).ToArray()));
         }
         catch (FormatException)
         {
-            return new X509Certificate2(Encoding.Latin1.GetBytes(contenido));
+            return Encoding.Latin1.GetBytes(contenido);
         }
     }
 
-    public static string APem(X509Certificate2 cert) => cert.ExportCertificatePem();
-
-    /// <summary>¿La clave privada corresponde al certificado?</summary>
-    public static bool ClaveCoincide(X509Certificate2 cert, string clavePrivadaPem)
+    /// <summary>¿La clave privada corresponde al certificado? (compara las claves públicas)</summary>
+    public static bool ClaveCoincide(DatosCertificado cert, string clavePrivadaPem)
     {
-        using var rsaCert = cert.GetRSAPublicKey();
-        if (rsaCert is null) return false;
         using var rsa = RSA.Create();
         rsa.ImportFromPem(clavePrivadaPem);
-        return rsaCert.ExportSubjectPublicKeyInfo().AsSpan().SequenceEqual(rsa.ExportSubjectPublicKeyInfo());
+        return cert.ClavePublica.AsSpan().SequenceEqual(rsa.ExportSubjectPublicKeyInfo());
     }
 
     /// <summary>CUIT que figura en el sujeto del certificado (serialNumber=CUIT nnnnnnnnnnn).</summary>
-    public static string? CuitDelCertificado(X509Certificate2 cert)
+    private static string? CuitDelSujeto(X500DistinguishedName sujeto)
     {
-        foreach (var rdn in cert.SubjectName.EnumerateRelativeDistinguishedNames())
+        foreach (var rdn in sujeto.EnumerateRelativeDistinguishedNames())
         {
+            if (rdn.HasMultipleElements) continue;
             if (rdn.GetSingleElementType().Value == OidSerialNumber)
             {
                 var valor = rdn.GetSingleElementValue() ?? string.Empty;

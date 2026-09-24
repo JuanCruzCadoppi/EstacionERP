@@ -44,7 +44,15 @@ public class WsaaClient
         if (vigente is not null && !forzarNuevo && vigente.Expira > ahora.AddMinutes(10))
             return new Credenciales(vigente.Token, vigente.Sign, config.Cuit);
 
-        var cms = FirmarTra(ArmarTra(servicio, DateTimeOffset.Now), config.CertificadoPem!, config.ClavePrivadaPem!);
+        string cms;
+        try
+        {
+            cms = FirmarTra(ArmarTra(servicio, DateTimeOffset.Now), config.CertificadoPem!, config.ClavePrivadaPem!);
+        }
+        catch (Exception ex)
+        {
+            throw new ArcaException("no se pudo firmar con el certificado (" + ex.Message + "). Probá importarlo de nuevo.", ex);
+        }
 
         var cuerpo = new XElement(NsWsaa + "loginCms", new XElement(NsWsaa + "in0", cms));
         XDocument respuesta;

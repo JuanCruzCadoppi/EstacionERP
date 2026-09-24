@@ -149,7 +149,7 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
         var c = await _db.ConfiguracionesFiscales.FirstOrDefaultAsync(ct);
         if (c is null) return Resultado<DateTime>.Error("Primero guardá los datos fiscales.");
 
-        System.Security.Cryptography.X509Certificates.X509Certificate2 cert;
+        CertificadoArca.DatosCertificado cert;
         try
         {
             cert = CertificadoArca.LeerCertificado(contenido);
@@ -159,39 +159,52 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
             return Resultado<DateTime>.Error("El archivo no es un certificado válido. Tiene que ser el que descargaste de ARCA (.crt o .pem).");
         }
 
-        using (cert)
-        {
-            var cuitCert = CertificadoArca.CuitDelCertificado(cert);
-            if (cuitCert is not null && cuitCert != c.Cuit)
-                return Resultado<DateTime>.Error($"El certificado es del CUIT {DocumentoValidador.FormatearCuit(cuitCert)}, pero la empresa tiene el CUIT {DocumentoValidador.FormatearCuit(c.Cuit)}.");
+        if (cert.Cuit is not null && cert.Cuit != c.Cuit)
+            return Resultado<DateTime>.Error($"El certificado es del CUIT {DocumentoValidador.FormatearCuit(cert.Cuit)}, pero la empresa tiene el CUIT {DocumentoValidador.FormatearCuit(c.Cuit)}.");
 
-            string? clave = null;
+        string? clave = null;
+        try
+        {
             if (c.ClavePendientePem is not null && CertificadoArca.ClaveCoincide(cert, c.ClavePendientePem))
                 clave = c.ClavePendientePem;
             else if (c.ClavePrivadaPem is not null && CertificadoArca.ClaveCoincide(cert, c.ClavePrivadaPem))
                 clave = c.ClavePrivadaPem;
-
-            if (clave is null)
-                return Resultado<DateTime>.Error("El certificado no corresponde a la última solicitud generada. Generá una solicitud nueva y volvé a pedir el certificado en ARCA.");
-
-            if (cert.NotAfter < DateTime.Now)
-                return Resultado<DateTime>.Error($"El certificado está vencido (venció el {cert.NotAfter:dd/MM/yyyy}).");
-
-            c.CertificadoPem = CertificadoArca.APem(cert);
-            c.ClavePrivadaPem = clave;
-            if (clave == c.ClavePendientePem)
-            {
-                c.ClavePendientePem = null;
-                c.SolicitudCertificadoPem = null;
-            }
-            c.CertificadoVence = cert.NotAfter.ToUniversalTime();
-            c.ModificadoEn = DateTime.UtcNow;
-
-            // Certificado nuevo → tickets de acceso nuevos.
-            _db.TicketsAcceso.RemoveRange(_db.TicketsAcceso);
-            await _db.SaveChangesAsync(ct);
-            return Resultado<DateTime>.Ok(cert.NotAfter);
         }
+        catch (Exception ex)
+        {
+            return Resultado<DateTime>.Error("No se pudo verificar la clave del certificado: " + ex.Message);
+        }
+
+        if (clave is null)
+            return Resultado<DateTime>.Error("El certificado no corresponde a la última solicitud generada. Generá una solicitud nueva y volvé a pedir el certificado en ARCA.");
+
+        if (cert.Vence < DateTime.Now)
+            return Resultado<DateTime>.Error($"El certificado está vencido (venció el {cert.Vence:dd/MM/yyyy}).");
+
+        // Verifica que Windows pueda firmar con el certificado antes de guardarlo.
+        try
+        {
+            using var prueba = CertificadoArca.ParaFirmar(cert.Pem, clave);
+        }
+        catch (Exception ex)
+        {
+            return Resultado<DateTime>.Error("El certificado es correcto pero Windows no pudo prepararlo para firmar: " + ex.Message);
+        }
+
+        c.CertificadoPem = cert.Pem;
+        c.ClavePrivadaPem = clave;
+        if (clave == c.ClavePendientePem)
+        {
+            c.ClavePendientePem = null;
+            c.SolicitudCertificadoPem = null;
+        }
+        c.CertificadoVence = cert.Vence.ToUniversalTime();
+        c.ModificadoEn = DateTime.UtcNow;
+
+        // Certificado nuevo → tickets de acceso nuevos.
+        _db.TicketsAcceso.RemoveRange(_db.TicketsAcceso);
+        await _db.SaveChangesAsync(ct);
+        return Resultado<DateTime>.Ok(cert.Vence);
     }
 
     public async Task<List<string>> ProbarConexionAsync(CancellationToken ct = default)
@@ -204,7 +217,7 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
                 ? "OK - Servidores de ARCA funcionando."
                 : $"ATENCIÓN - Servidores de ARCA: App {estado.AppServer}, Base {estado.DbServer}, Autenticación {estado.AuthServer}.");
         }
-        catch (ArcaException ex)
+        catch (Exception ex)
         {
             r.Add("ERROR - No se pudo conectar con ARCA: " + ex.Message);
             return r;
@@ -215,7 +228,7 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
             await _arca.ProbarAutenticacionAsync(ct);
             r.Add("OK - Certificado aceptado: autenticación correcta (WSAA).");
         }
-        catch (ArcaException ex)
+        catch (Exception ex)
         {
             r.Add("ERROR - Autenticación: " + ex.Message);
             return r;
@@ -235,7 +248,7 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
             var ultimo = await _arca.UltimoAutorizadoAsync(pv.Numero, tipo, ct);
             r.Add($"OK - Facturación habilitada: último {tipo.Texto()} del punto de venta {pv.Numero:D4} es el N° {ultimo}.");
         }
-        catch (ArcaException ex)
+        catch (Exception ex)
         {
             r.Add("ERROR - Facturación (WSFEv1): " + ex.Message);
         }

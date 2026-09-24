@@ -50,13 +50,26 @@ public class CertificadoArcaTests
     {
         var s = CertificadoArca.GenerarSolicitud("20123456786", "ESTACION SA", "estacionerp");
         var certPem = ArcaCertificadoSimulado.EmitirDesdeCsr(s.CsrPem, s.ClavePrivadaPem);
-        using var cert = CertificadoArca.LeerCertificado(certPem);
+        var cert = CertificadoArca.LeerCertificado(certPem);
 
         Assert.True(CertificadoArca.ClaveCoincide(cert, s.ClavePrivadaPem));
-        Assert.Equal("20123456786", CertificadoArca.CuitDelCertificado(cert));
+        Assert.Equal("20123456786", cert.Cuit);
+        Assert.True(cert.Vence > DateTime.Now.AddYears(1));
 
         var otra = CertificadoArca.GenerarSolicitud("20123456786", "ESTACION SA", "otro");
         Assert.False(CertificadoArca.ClaveCoincide(cert, otra.ClavePrivadaPem));
+    }
+
+    [Fact]
+    public void Lee_certificado_guardado_con_bloc_de_notas()
+    {
+        var s = CertificadoArca.GenerarSolicitud("20123456786", "ESTACION SA", "estacionerp");
+        var certPem = ArcaCertificadoSimulado.EmitirDesdeCsr(s.CsrPem, s.ClavePrivadaPem);
+        // BOM, saltos de línea de Windows y espacios sobrantes, como queda al copiar de la web.
+        var comoWindows = "\uFEFF  " + certPem.Replace("\n", "\r\n") + "\r\n\r\n";
+        var cert = CertificadoArca.LeerCertificado(comoWindows);
+        Assert.True(CertificadoArca.ClaveCoincide(cert, s.ClavePrivadaPem));
+        Assert.StartsWith("-----BEGIN CERTIFICATE-----", cert.Pem);
     }
 
     [Fact]
