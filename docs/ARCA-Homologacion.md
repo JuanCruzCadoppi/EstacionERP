@@ -73,6 +73,24 @@ OK - Facturación habilitada: último Factura B del punto de venta 0001 es el N�
 
 ---
 
+## Impresión del comprobante
+
+En **Configuración fiscal → 3. Puntos de venta**, para cada punto de venta elegís:
+
+- **Formato de impresión**: *Hoja A4* (impresora común) o *Ticket 80 mm* (impresora térmica).
+- **Impresora**: la lista muestra las impresoras instaladas **en la PC donde estás**. Configuralo desde la
+  PC donde está conectada la impresora (por ejemplo, la del lavadero). Vacío = la predeterminada de Windows.
+- **Imprimir automáticamente al emitir**: si está tildado, apenas ARCA da el CAE sale impresa.
+
+En **Facturación ARCA → Comprobantes emitidos**: *Imprimir* (reimpresión), *Ver PDF* (doble clic) y
+*Guardar PDF* (siempre en A4, para mandar por mail).
+
+El comprobante incluye lo que exige ARCA: letra y código, datos de emisor y receptor, CAE y vencimiento,
+código QR, el bloque *Régimen de Transparencia Fiscal al Consumidor (Ley 27.743)* en las facturas B y la
+leyenda de la RG 5003 en facturas A a monotributistas. En homologación sale marcado "SIN VALIDEZ FISCAL".
+
+Requiere Windows 10 (versión 1809 o superior) o Windows 11.
+
 ## Cómo decide el programa el tipo de factura
 
 | Emisor (la estación)    | Cliente                         | Comprobante |

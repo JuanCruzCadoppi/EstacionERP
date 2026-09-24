@@ -20,4 +20,10 @@ public partial class FacturacionView : UserControl
         if (DataContext is FacturacionViewModel vm && vm.AgregarProductoCommand.CanExecute(null))
             vm.AgregarProductoCommand.Execute(null);
     }
+
+    private void AlHacerDobleClicComprobante(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is FacturacionViewModel vm && vm.VerPdfCommand.CanExecute(null))
+            vm.VerPdfCommand.Execute(null);
+    }
 }

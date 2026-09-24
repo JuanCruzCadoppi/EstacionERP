@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IEstacionDbContext>(sp => sp.GetRequiredService<EstacionDbContext>());
 
         // Web services de ARCA.
+        services.AddSingleton<Application.Impresion.IGeneradorComprobantePdf, Impresion.GeneradorComprobantePdf>();
         services.AddHttpClient<WsaaClient>(c => c.Timeout = TimeSpan.FromSeconds(30));
         services.AddHttpClient<IArcaClient, ArcaClient>(c => c.Timeout = TimeSpan.FromSeconds(40));
         return services;

@@ -1,4 +1,5 @@
 using EstacionERP.Domain.Common;
+using EstacionERP.Domain.Enums;
 
 namespace EstacionERP.Domain.Entidades;
 
@@ -13,4 +14,11 @@ public class PuntoVenta : Entidad
     public int UnidadNegocioId { get; set; }
     public UnidadNegocio? UnidadNegocio { get; set; }
     public bool Activo { get; set; } = true;
+
+    // Impresión del comprobante.
+    public FormatoImpresion FormatoImpresion { get; set; } = FormatoImpresion.A4;
+    /// <summary>Nombre de la impresora de Windows. Vacío = impresora predeterminada.</summary>
+    public string? Impresora { get; set; }
+    /// <summary>Si es true, al autorizarse el comprobante se imprime solo.</summary>
+    public bool ImprimirAlEmitir { get; set; } = true;
 }

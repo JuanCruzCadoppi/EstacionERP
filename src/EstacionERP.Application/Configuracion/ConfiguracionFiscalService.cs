@@ -27,7 +27,13 @@ public record EstadoCertificado(
     DateTime? Vence,
     bool TieneSolicitudPendiente);
 
-public record PuntoVentaFila(int Id, int Numero, string Descripcion, int UnidadNegocioId, string UnidadNegocio, bool Activo);
+public record PuntoVentaFila(
+    int Id, int Numero, string Descripcion, int UnidadNegocioId, string UnidadNegocio, bool Activo,
+    FormatoImpresion FormatoImpresion = FormatoImpresion.A4, string? Impresora = null, bool ImprimirAlEmitir = true)
+{
+    public string FormatoTexto => FormatoImpresion.Texto();
+    public string ImpresoraTexto => string.IsNullOrWhiteSpace(Impresora) ? "(predeterminada)" : Impresora;
+}
 
 public interface IConfiguracionFiscalService
 {
@@ -264,7 +270,8 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
         var q = _db.PuntosVenta.AsNoTracking().Include(p => p.UnidadNegocio).AsQueryable();
         if (soloActivos) q = q.Where(p => p.Activo);
         var lista = await q.OrderBy(p => p.Numero).ToListAsync(ct);
-        return lista.Select(p => new PuntoVentaFila(p.Id, p.Numero, p.Descripcion, p.UnidadNegocioId, p.UnidadNegocio!.Nombre, p.Activo)).ToList();
+        return lista.Select(p => new PuntoVentaFila(p.Id, p.Numero, p.Descripcion, p.UnidadNegocioId, p.UnidadNegocio!.Nombre, p.Activo,
+            p.FormatoImpresion, p.Impresora, p.ImprimirAlEmitir)).ToList();
     }
 
     public async Task<Resultado<int>> GuardarPuntoVentaAsync(PuntoVentaFila d, CancellationToken ct = default)
@@ -297,6 +304,9 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
         pv.Descripcion = d.Descripcion.Trim();
         pv.UnidadNegocioId = d.UnidadNegocioId;
         pv.Activo = d.Activo;
+        pv.FormatoImpresion = Enum.IsDefined(d.FormatoImpresion) ? d.FormatoImpresion : FormatoImpresion.A4;
+        pv.Impresora = string.IsNullOrWhiteSpace(d.Impresora) ? null : d.Impresora.Trim();
+        pv.ImprimirAlEmitir = d.ImprimirAlEmitir;
         await _db.SaveChangesAsync(ct);
         return Resultado<int>.Ok(pv.Id);
     }

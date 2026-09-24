@@ -37,4 +37,7 @@ public static class Opciones
 
     public static IReadOnlyList<Opcion<EntornoArca>> Entornos { get; } =
         Enum.GetValues<EntornoArca>().Select(v => new Opcion<EntornoArca>(v, v.Texto())).ToList();
+
+    public static IReadOnlyList<Opcion<FormatoImpresion>> FormatosImpresion { get; } =
+        Enum.GetValues<FormatoImpresion>().Select(v => new Opcion<FormatoImpresion>(v, v.Texto())).ToList();
 }

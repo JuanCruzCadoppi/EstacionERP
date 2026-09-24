@@ -84,13 +84,15 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="280" />
                         </Grid.ColumnDefinitions>
                         <DataGrid Grid.Column="0" MinHeight="140" ItemsSource="{Binding PuntosVenta}" SelectedItem="{Binding PuntoSeleccionado}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="N°" Binding="{Binding Numero, StringFormat=D4}" Width="60" />
                                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" />
-                                <DataGridTextColumn Header="Unidad" Binding="{Binding UnidadNegocio}" Width="130" />
+                                <DataGridTextColumn Header="Unidad" Binding="{Binding UnidadNegocio}" Width="110" />
+                                <DataGridTextColumn Header="Impresión" Binding="{Binding FormatoTexto}" Width="100" />
+                                <DataGridTextColumn Header="Impresora" Binding="{Binding ImpresoraTexto}" Width="140" />
                                 <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60" />
                             </DataGrid.Columns>
                         </DataGrid>
@@ -102,7 +104,15 @@
                             <TextBlock Style="{StaticResource Etiqueta}" Text="Unidad de negocio" />
                             <ComboBox ItemsSource="{Binding Unidades}" DisplayMemberPath="Texto" SelectedValuePath="Valor"
                                       SelectedValue="{Binding PvUnidadId}" />
-                            <CheckBox Content="Activo" IsChecked="{Binding PvActivo}" Margin="0,8,0,0" />
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Formato de impresión" />
+                            <ComboBox ItemsSource="{Binding Formatos}" DisplayMemberPath="Texto" SelectedValuePath="Valor"
+                                      SelectedValue="{Binding PvFormato}" />
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Impresora (vacío = la predeterminada)" />
+                            <ComboBox ItemsSource="{Binding Impresoras}" IsEditable="True"
+                                      Text="{Binding PvImpresora, UpdateSourceTrigger=LostFocus}"
+                                      ToolTip="Impresoras instaladas en esta PC. Configuralo desde la PC donde está conectada la impresora." />
+                            <CheckBox Content="Imprimir automáticamente al emitir" IsChecked="{Binding PvImprimirAlEmitir}" Margin="0,8,0,0" />
+                            <CheckBox Content="Activo" IsChecked="{Binding PvActivo}" Margin="0,6,0,0" />
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                 <Button Style="{StaticResource BotonSecundario}" Content="Nuevo" Command="{Binding NuevoPuntoCommand}" />
                                 <Button Style="{StaticResource BotonPrimario}" Content="Guardar" Command="{Binding GuardarPuntoCommand}" />

@@ -200,6 +200,9 @@
                         <TextBlock Text="Hasta" VerticalAlignment="Center" Margin="12,0,6,0" />
                         <DatePicker SelectedDate="{Binding Hasta}" Width="130" />
                         <Button Style="{StaticResource BotonSecundario}" Content="Buscar" Margin="12,0,0,0" Command="{Binding ListarCommand}" />
+                        <Button Style="{StaticResource BotonPrimario}" Content="Imprimir" Margin="12,0,8,0" Command="{Binding ImprimirCommand}" />
+                        <Button Style="{StaticResource BotonSecundario}" Content="Ver PDF" Command="{Binding VerPdfCommand}" />
+                        <Button Style="{StaticResource BotonSecundario}" Content="Guardar PDF" Command="{Binding GuardarPdfCommand}" />
                         <Button Style="{StaticResource BotonSecundario}" Content="Reintentar seleccionado" Command="{Binding ReintentarCommand}"
                                 IsEnabled="{Binding Emitiendo, Converter={StaticResource Negar}}" />
                         <Button Style="{StaticResource BotonSecundario}" Content="Reintentar todos los pendientes"
@@ -209,7 +212,8 @@
                     <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource TextoSuave}" Margin="0,8,0,0" Text="{Binding EstadoLista}" />
                     <TextBox DockPanel.Dock="Bottom" Margin="0,8,0,0" MinHeight="50" IsReadOnly="True" TextWrapping="Wrap"
                              Text="{Binding ComprobanteSeleccionado.Mensajes, Mode=OneWay}" ToolTip="Mensajes de ARCA del comprobante elegido" />
-                    <DataGrid ItemsSource="{Binding Comprobantes}" SelectedItem="{Binding ComprobanteSeleccionado}">
+                    <DataGrid ItemsSource="{Binding Comprobantes}" SelectedItem="{Binding ComprobanteSeleccionado}"
+                              MouseDoubleClick="AlHacerDobleClicComprobante">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="90" />
                             <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="130" />

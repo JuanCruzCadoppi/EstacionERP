@@ -6,6 +6,9 @@ using EstacionERP.Application.Clientes;
 using EstacionERP.Application.Common;
 using EstacionERP.Application.Configuracion;
 using EstacionERP.Application.Facturacion;
+using EstacionERP.Application.Impresion;
+using EstacionERP.Desktop.Impresion;
+using Microsoft.Win32;
 using EstacionERP.Application.Productos;
 using EstacionERP.Application.Seguridad;
 using EstacionERP.Desktop.Comun;
@@ -277,8 +280,10 @@ public partial class FacturacionViewModel : ObservableObject
             switch (c.Estado)
             {
                 case EstadoComprobante.Autorizado:
+                    var impresion = await ImprimirSiCorrespondeAsync(c.Id);
                     MessageBox.Show($"{c.Tipo.Texto()} {c.NumeroCompleto} autorizada.\n\nCAE: {c.Cae}\nVence: {c.CaeVencimiento:dd/MM/yyyy}" +
-                                    (string.IsNullOrWhiteSpace(c.Mensajes) ? "" : "\n\nObservaciones de ARCA:\n" + c.Mensajes),
+                                    (string.IsNullOrWhiteSpace(c.Mensajes) ? "" : "\n\nObservaciones de ARCA:\n" + c.Mensajes) +
+                                    (impresion is null ? "" : "\n\n" + impresion),
                         "Comprobante autorizado", MessageBoxButton.OK, MessageBoxImage.Information);
                     Limpiar();
                     break;
@@ -298,6 +303,97 @@ public partial class FacturacionViewModel : ObservableObject
         finally
         {
             Emitiendo = false;
+        }
+    }
+
+    // ------------------------------------------------------------ Impresión
+
+    /// <summary>Imprime solo si el punto de venta lo tiene configurado. Devuelve el texto para el aviso.</summary>
+    private async Task<string?> ImprimirSiCorrespondeAsync(int comprobanteId)
+    {
+        try
+        {
+            using var scope = _scopes.CreateScope();
+            var r = await scope.ServiceProvider.GetRequiredService<IImpresionService>().PrepararAsync(comprobanteId);
+            if (!r.Exito) return "No se pudo preparar la impresión: " + string.Join(" ", r.Errores);
+            if (!r.Valor!.ImprimirAlEmitir) return null;
+            var impresora = await ImpresoraWindows.ImprimirAsync(r.Valor.Pdf, r.Valor.Impresora, r.Valor.Comprobante.NombreArchivo);
+            return $"Se envió a imprimir ({r.Valor.Formato.Texto()}) en: {impresora}";
+        }
+        catch (Exception ex)
+        {
+            return "ATENCIÓN: la factura es válida, pero no se pudo imprimir (" + ex.Message +
+                   "). Podés reimprimirla desde \"Comprobantes emitidos\".";
+        }
+    }
+
+    private async Task<DatosImpresion?> PrepararSeleccionadoAsync(FormatoImpresion? formato)
+    {
+        if (ComprobanteSeleccionado is not { Estado: EstadoComprobante.Autorizado } sel)
+        {
+            MessageBox.Show("Elegí un comprobante autorizado (con CAE).", "Imprimir", MessageBoxButton.OK, MessageBoxImage.Information);
+            return null;
+        }
+        using var scope = _scopes.CreateScope();
+        var r = await scope.ServiceProvider.GetRequiredService<IImpresionService>().PrepararAsync(sel.Id, formato);
+        if (r.Exito) return r.Valor;
+        MessageBox.Show(string.Join(Environment.NewLine, r.Errores), "Imprimir", MessageBoxButton.OK, MessageBoxImage.Warning);
+        return null;
+    }
+
+    [RelayCommand]
+    private async Task ImprimirAsync()
+    {
+        try
+        {
+            var d = await PrepararSeleccionadoAsync(null);
+            if (d is null) return;
+            var impresora = await ImpresoraWindows.ImprimirAsync(d.Pdf, d.Impresora, d.Comprobante.NombreArchivo);
+            EstadoLista = $"{d.Comprobante.NumeroCompleto} enviado a {impresora} ({d.Formato.Texto()}).";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("No se pudo imprimir: " + ex.Message, "Imprimir", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>El PDF para ver o mandar por mail sale siempre en hoja A4.</summary>
+    [RelayCommand]
+    private async Task VerPdfAsync()
+    {
+        try
+        {
+            var d = await PrepararSeleccionadoAsync(FormatoImpresion.A4);
+            if (d is not null) ImpresoraWindows.Abrir(d.Pdf, d.Comprobante.NombreArchivo);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("No se pudo abrir el PDF: " + ex.Message, "PDF", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    [RelayCommand]
+    private async Task GuardarPdfAsync()
+    {
+        try
+        {
+            var d = await PrepararSeleccionadoAsync(FormatoImpresion.A4);
+            if (d is null) return;
+            var dialogo = new SaveFileDialog
+            {
+                Title = "Guardar comprobante en PDF",
+                FileName = d.Comprobante.NombreArchivo,
+                Filter = "PDF (*.pdf)|*.pdf"
+            };
+            if (dialogo.ShowDialog() == true)
+            {
+                await System.IO.File.WriteAllBytesAsync(dialogo.FileName, d.Pdf);
+                EstadoLista = "PDF guardado en " + dialogo.FileName;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("No se pudo guardar el PDF: " + ex.Message, "PDF", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

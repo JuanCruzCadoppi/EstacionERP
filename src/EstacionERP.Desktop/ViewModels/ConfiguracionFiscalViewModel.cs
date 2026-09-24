@@ -21,6 +21,9 @@ public partial class ConfiguracionFiscalViewModel : ObservableObject
     public IReadOnlyList<Opcion<EntornoArca>> Entornos => Opciones.Entornos;
     public ObservableCollection<Opcion<int>> Unidades { get; } = new();
     public ObservableCollection<PuntoVentaFila> PuntosVenta { get; } = new();
+    public IReadOnlyList<Opcion<FormatoImpresion>> Formatos => Opciones.FormatosImpresion;
+    /// <summary>Impresoras instaladas en esta PC. La primera opción vacía = predeterminada de Windows.</summary>
+    public ObservableCollection<string> Impresoras { get; } = new();
 
     // Datos de la empresa
     [ObservableProperty] private string _cuit = string.Empty;
@@ -47,6 +50,9 @@ public partial class ConfiguracionFiscalViewModel : ObservableObject
     [ObservableProperty] private string _pvDescripcion = string.Empty;
     [ObservableProperty] private int _pvUnidadId = 1;
     [ObservableProperty] private bool _pvActivo = true;
+    [ObservableProperty] private FormatoImpresion _pvFormato = FormatoImpresion.A4;
+    [ObservableProperty] private string? _pvImpresora;
+    [ObservableProperty] private bool _pvImprimirAlEmitir = true;
     [ObservableProperty] private string? _mensajePv;
 
     public ConfiguracionFiscalViewModel(IServiceScopeFactory scopes) => _scopes = scopes;
@@ -60,6 +66,10 @@ public partial class ConfiguracionFiscalViewModel : ObservableObject
         Unidades.Clear();
         foreach (var u in await db.UnidadesNegocio.AsNoTracking().OrderBy(u => u.Id).ToListAsync())
             Unidades.Add(new Opcion<int>(u.Id, u.Nombre));
+
+        Impresoras.Clear();
+        Impresoras.Add(string.Empty);
+        foreach (var nombre in Impresion.ImpresoraWindows.Instaladas()) Impresoras.Add(nombre);
 
         var d = await servicio.ObtenerAsync();
         Cuit = d.Cuit;
@@ -194,6 +204,9 @@ public partial class ConfiguracionFiscalViewModel : ObservableObject
         PvDescripcion = value.Descripcion;
         PvUnidadId = value.UnidadNegocioId;
         PvActivo = value.Activo;
+        PvFormato = value.FormatoImpresion;
+        PvImpresora = value.Impresora ?? string.Empty;
+        PvImprimirAlEmitir = value.ImprimirAlEmitir;
         MensajePv = null;
     }
 
@@ -206,6 +219,9 @@ public partial class ConfiguracionFiscalViewModel : ObservableObject
         PvDescripcion = string.Empty;
         PvUnidadId = Unidades.FirstOrDefault()?.Valor ?? 1;
         PvActivo = true;
+        PvFormato = FormatoImpresion.A4;
+        PvImpresora = string.Empty;
+        PvImprimirAlEmitir = true;
         MensajePv = null;
     }
 
@@ -214,7 +230,8 @@ public partial class ConfiguracionFiscalViewModel : ObservableObject
     {
         using var scope = _scopes.CreateScope();
         var servicio = scope.ServiceProvider.GetRequiredService<IConfiguracionFiscalService>();
-        var r = await servicio.GuardarPuntoVentaAsync(new PuntoVentaFila(PvId, PvNumero, PvDescripcion, PvUnidadId, string.Empty, PvActivo));
+        var r = await servicio.GuardarPuntoVentaAsync(new PuntoVentaFila(PvId, PvNumero, PvDescripcion, PvUnidadId, string.Empty, PvActivo,
+            PvFormato, string.IsNullOrWhiteSpace(PvImpresora) ? null : PvImpresora, PvImprimirAlEmitir));
         MensajePv = r.Exito ? "Punto de venta guardado." : string.Join(Environment.NewLine, r.Errores);
         if (r.Exito)
         {

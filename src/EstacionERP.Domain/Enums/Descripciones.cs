@@ -102,4 +102,19 @@ public static class Descripciones
         EntornoArca.Produccion => "Producción",
         _ => v.ToString()
     };
+
+    public static string Texto(this FormatoImpresion v) => v switch
+    {
+        FormatoImpresion.A4 => "Hoja A4",
+        FormatoImpresion.Ticket80 => "Ticket 80 mm",
+        _ => v.ToString()
+    };
+
+    public static string TextoCorto(this TipoDocumento v) => v switch
+    {
+        TipoDocumento.Cuit => "CUIT",
+        TipoDocumento.Cuil => "CUIL",
+        TipoDocumento.Dni => "DNI",
+        _ => "Doc."
+    };
 }

@@ -10,6 +10,7 @@ public class PuntoVentaConfig : IEntityTypeConfiguration<PuntoVenta>
     {
         b.ToTable("puntos_venta");
         b.Property(x => x.Descripcion).HasMaxLength(60).IsRequired();
+        b.Property(x => x.Impresora).HasMaxLength(200);
         b.HasIndex(x => x.Numero).IsUnique();
         b.HasOne(x => x.UnidadNegocio)
             .WithMany(u => u.PuntosVenta)
