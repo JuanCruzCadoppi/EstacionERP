@@ -34,7 +34,7 @@
                                 <Hyperlink Foreground="#9AA5B1" Command="{Binding CerrarSesionCommand}">Cerrar sesión</Hyperlink>
                             </TextBlock>
                         </StackPanel>
-                        <TextBlock Text="v0.2 · Etapa 1" Foreground="#52606D" FontSize="11" Margin="0,10,0,0" />
+                        <TextBlock Text="v0.3 · Etapa 2" Foreground="#52606D" FontSize="11" Margin="0,10,0,0" />
                     </StackPanel>
                 </Border>
 
