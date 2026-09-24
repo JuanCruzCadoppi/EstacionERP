@@ -149,6 +149,9 @@ public class ConfiguracionFiscalService : IConfiguracionFiscalService
         var c = await _db.ConfiguracionesFiscales.FirstOrDefaultAsync(ct);
         if (c is null) return Resultado<DateTime>.Error("Primero guardá los datos fiscales.");
 
+        if (string.IsNullOrWhiteSpace(contenido))
+            return Resultado<DateTime>.Error("El archivo está vacío. Abrilo con el Bloc de notas, pegá el certificado que devolvió ARCA (empieza con -----BEGIN CERTIFICATE-----) y guardalo.");
+
         CertificadoArca.DatosCertificado cert;
         try
         {
