@@ -66,6 +66,8 @@ public partial class App : System.Windows.Application
                 services.AddTransient<ClientesViewModel>();
                 services.AddTransient<ProductosViewModel>();
                 services.AddTransient<UsuariosViewModel>();
+                services.AddTransient<FacturacionViewModel>();
+                services.AddTransient<ConfiguracionFiscalViewModel>();
                 services.AddTransient<MainWindow>();
             })
             .Build();

@@ -15,6 +15,9 @@ public class EstacionDbContext : DbContext, IEstacionDbContext
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<UsuarioUnidadNegocio> UsuariosUnidades => Set<UsuarioUnidadNegocio>();
+    public DbSet<ConfiguracionFiscal> ConfiguracionesFiscales => Set<ConfiguracionFiscal>();
+    public DbSet<TicketAcceso> TicketsAcceso => Set<TicketAcceso>();
+    public DbSet<Comprobante> Comprobantes => Set<Comprobante>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -9,7 +9,9 @@ public enum Permiso
     DesactivarClientes,
     EditarProductos,
     ModificarPrecios,
-    GestionarUsuarios
+    GestionarUsuarios,
+    Facturar,
+    ConfigurarFacturacion
 }
 
 public static class Permisos
@@ -19,8 +21,8 @@ public static class Permisos
     {
         Rol.Administrador => true,
         Rol.Encargado => permiso is Permiso.EditarClientes or Permiso.DesactivarClientes
-                                 or Permiso.EditarProductos or Permiso.ModificarPrecios,
-        Rol.Operador => permiso is Permiso.EditarClientes,
+                                 or Permiso.EditarProductos or Permiso.ModificarPrecios or Permiso.Facturar,
+        Rol.Operador => permiso is Permiso.EditarClientes or Permiso.Facturar,
         _ => false
     };
 }

@@ -1,4 +1,6 @@
 using EstacionERP.Application.Clientes;
+using EstacionERP.Application.Configuracion;
+using EstacionERP.Application.Facturacion;
 using EstacionERP.Application.Productos;
 using EstacionERP.Application.Seguridad;
 using EstacionERP.Application.Usuarios;
@@ -16,6 +18,8 @@ public static class DependencyInjection
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<IUsuarioService, UsuarioService>();
+        services.AddScoped<IFacturacionService, FacturacionService>();
+        services.AddScoped<IConfiguracionFiscalService, ConfiguracionFiscalService>();
         return services;
     }
 }

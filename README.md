@@ -77,7 +77,8 @@ La app aplica las migraciones pendientes al iniciar.
 
 - [x] **Etapa 1a** — Estructura, base de datos, unidades de negocio, ABM de clientes
 - [x] **Etapa 1b** — Productos, usuarios, login y permisos por rol y unidad de negocio
-- [ ] Etapa 2 — Facturación ARCA en homologación (WSAA + WSFEv1)
+- [x] **Etapa 2** — Facturación electrónica ARCA en homologación (WSAA + WSFEv1): facturas A/B/C, CAE, reintentos. Guía: [docs/ARCA-Homologacion.md](docs/ARCA-Homologacion.md)
+- [ ] Etapa 2b — Impresión / PDF del comprobante con código QR
 - [ ] Etapa 3 — Repuestos (ventas de mostrador y stock)
 - [ ] Etapa 4 — Caja y cuentas corrientes
 - [ ] Etapa 5 — Lavadero

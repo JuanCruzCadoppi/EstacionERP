@@ -73,4 +73,33 @@ public static class Descripciones
         UnidadMedida.Metro => "Metro",
         _ => v.ToString()
     };
+
+    public static string Texto(this TipoComprobante v) => v switch
+    {
+        TipoComprobante.FacturaA => "Factura A",
+        TipoComprobante.NotaDebitoA => "Nota de Débito A",
+        TipoComprobante.NotaCreditoA => "Nota de Crédito A",
+        TipoComprobante.FacturaB => "Factura B",
+        TipoComprobante.NotaDebitoB => "Nota de Débito B",
+        TipoComprobante.NotaCreditoB => "Nota de Crédito B",
+        TipoComprobante.FacturaC => "Factura C",
+        TipoComprobante.NotaDebitoC => "Nota de Débito C",
+        TipoComprobante.NotaCreditoC => "Nota de Crédito C",
+        _ => v.ToString()
+    };
+
+    public static string Texto(this EstadoComprobante v) => v switch
+    {
+        EstadoComprobante.Pendiente => "Pendiente",
+        EstadoComprobante.Autorizado => "Autorizado",
+        EstadoComprobante.Rechazado => "Rechazado",
+        _ => v.ToString()
+    };
+
+    public static string Texto(this EntornoArca v) => v switch
+    {
+        EntornoArca.Homologacion => "Homologación (pruebas)",
+        EntornoArca.Produccion => "Producción",
+        _ => v.ToString()
+    };
 }

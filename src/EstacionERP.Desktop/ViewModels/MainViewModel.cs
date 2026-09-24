@@ -29,6 +29,9 @@ public partial class MainViewModel : ObservableObject
     public bool VerRepuestos => _sesion.TieneAcceso(UnidadNegocio.RepuestosId);
     public bool VerLavadero => _sesion.TieneAcceso(UnidadNegocio.LavaderoId);
     public bool VerUsuarios => _sesion.Puede(Permiso.GestionarUsuarios);
+    public bool VerFacturacion => _sesion.Puede(Permiso.Facturar);
+    public bool VerConfiguracionFiscal => _sesion.Puede(Permiso.ConfigurarFacturacion);
+    public bool VerAdministracion => VerUsuarios || VerConfiguracionFiscal;
 
     public MainViewModel(IServiceProvider sp, ISesionActual sesion)
     {
@@ -56,8 +59,8 @@ public partial class MainViewModel : ObservableObject
                 "Apertura y cierre de caja por turno, medios de pago y arqueo.")),
             "CuentasCorrientes" => ("Cuentas corrientes", new ProximamenteViewModel("Cuentas corrientes",
                 "Saldos por cliente y unidad de negocio, recibos e imputación de pagos.")),
-            "Facturacion" => ("Facturación ARCA", new ProximamenteViewModel("Facturación ARCA",
-                "Emisión de comprobantes A/B/C con CAE mediante WSAA + WSFEv1.")),
+            "Facturacion" when VerFacturacion => ("Facturación ARCA", _sp.GetRequiredService<FacturacionViewModel>()),
+            "ConfiguracionFiscal" when VerConfiguracionFiscal => ("Configuración fiscal", _sp.GetRequiredService<ConfiguracionFiscalViewModel>()),
             _ => (Titulo, VistaActual)
         };
     }

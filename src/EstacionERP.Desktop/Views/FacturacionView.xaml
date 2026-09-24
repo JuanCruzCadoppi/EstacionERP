@@ -1,0 +1,231 @@
+<UserControl x:Class="EstacionERP.Desktop.Views.FacturacionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:comun="clr-namespace:EstacionERP.Desktop.Comun"
+             x:Name="Raiz"
+             Loaded="AlCargar">
+    <UserControl.Resources>
+        <Style x:Key="CeldaDerecha" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="TotalGrande" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource TituloPagina}" Text="Facturación ARCA" />
+
+        <!-- Avisos -->
+        <Border DockPanel.Dock="Top" Background="#FFF4CE" BorderBrush="#E0B000" BorderThickness="1" CornerRadius="4"
+                Padding="10,6" Margin="0,10,0,0"
+                Visibility="{Binding ModoPruebas, Converter={StaticResource BoolAVisibilidad}}">
+            <TextBlock Foreground="#5C4600" TextWrapping="Wrap"
+                       Text="MODO PRUEBAS (homologación): los comprobantes se autorizan en el servidor de pruebas de ARCA y NO tienen validez fiscal." />
+        </Border>
+        <TextBlock DockPanel.Dock="Top" Foreground="#B00020" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Aviso}" />
+
+        <TabControl Margin="0,12,0,0">
+            <!-- ================= NUEVO COMPROBANTE ================= -->
+            <TabItem Header="  Nueva factura  ">
+                <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="320" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Cabecera: unidad, punto de venta, cliente -->
+                    <WrapPanel Grid.Row="0" Grid.Column="0">
+                        <StackPanel Width="170" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Unidad de negocio" />
+                            <ComboBox ItemsSource="{Binding Unidades}" DisplayMemberPath="Texto" SelectedValuePath="Valor"
+                                      SelectedValue="{Binding UnidadId}" />
+                        </StackPanel>
+                        <StackPanel Width="170" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Punto de venta" />
+                            <ComboBox ItemsSource="{Binding PuntosVenta}" SelectedItem="{Binding PuntoVenta}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <Run Text="{Binding Numero, StringFormat=D4, Mode=OneWay}" />
+                                            <Run Text=" - " />
+                                            <Run Text="{Binding Descripcion, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Width="160" Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Buscar cliente" />
+                            <TextBox Text="{Binding BusquedaCliente, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Nombre, CUIT o DNI. Enter para buscar.">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding BuscarClienteCommand}" />
+                                </TextBox.InputBindings>
+                            </TextBox>
+                        </StackPanel>
+                        <StackPanel Width="260" Margin="0,0,8,0">
+                            <TextBlock Style="{StaticResource Etiqueta}" Text="Cliente" />
+                            <ComboBox ItemsSource="{Binding Clientes}" SelectedItem="{Binding Cliente}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <Run Text="{Binding RazonSocial, Mode=OneWay}" />
+                                            <Run Text=" (" /><Run Text="{Binding CondicionIva, Mode=OneWay}" /><Run Text=")" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        <Button Style="{StaticResource BotonSecundario}" Content="Consumidor final" VerticalAlignment="Bottom"
+                                Command="{Binding ConsumidorFinalCommand}" />
+                    </WrapPanel>
+
+                    <!-- Buscador de productos -->
+                    <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,14,0,8">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource BotonSecundario}" Content="+ Línea libre" Margin="8,0,0,0"
+                                Command="{Binding AgregarLineaLibreCommand}" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource BotonSecundario}" Content="Buscar" Margin="8,0,0,0"
+                                Command="{Binding BuscarProductoCommand}" />
+                        <TextBox Text="{Binding BusquedaProducto, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Código, descripción o código de barras. Enter para buscar; si hay uno solo se agrega directo.">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding BuscarProductoCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+
+                    <Grid Grid.Row="2" Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Resultados de búsqueda -->
+                        <ListBox Grid.Row="0" MaxHeight="130" Margin="0,0,0,8" ItemsSource="{Binding ProductosEncontrados}"
+                                 SelectedItem="{Binding ProductoSeleccionado}" MouseDoubleClick="AlElegirProducto">
+                            <ListBox.Style>
+                                <Style TargetType="ListBox">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ProductosEncontrados.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.Style>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <Run Text="{Binding Codigo, Mode=OneWay}" FontWeight="SemiBold" />
+                                        <Run Text="  " /><Run Text="{Binding Descripcion, Mode=OneWay}" />
+                                        <Run Text="  " /><Run Text="{Binding PrecioVenta, StringFormat=C2, Mode=OneWay}" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <!-- Ítems -->
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding ItemSeleccionado}"
+                                  IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad, UpdateSourceTrigger=LostFocus}" Width="80" />
+                                <DataGridTextColumn Header="Precio final" Binding="{Binding PrecioUnitario, StringFormat=N2, UpdateSourceTrigger=LostFocus}" Width="110" />
+                                <DataGridComboBoxColumn Header="IVA" Width="80"
+                                                        ItemsSource="{x:Static comun:Opciones.Alicuotas}"
+                                                        DisplayMemberPath="Texto" SelectedValuePath="Valor"
+                                                        SelectedValueBinding="{Binding AlicuotaIva}" />
+                                <DataGridCheckBoxColumn Header="Servicio" Binding="{Binding EsServicio, UpdateSourceTrigger=PropertyChanged}" Width="65" />
+                                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2, Mode=OneWay}" Width="110"
+                                                    IsReadOnly="True" ElementStyle="{StaticResource CeldaDerecha}" />
+                                <DataGridTemplateColumn Width="40">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="X" Padding="6,0" ToolTip="Quitar"
+                                                    Command="{Binding DataContext.QuitarItemCommand, ElementName=Raiz}"
+                                                    CommandParameter="{Binding}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+
+                    <!-- Panel derecho: totales -->
+                    <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Style="{StaticResource Tarjeta}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource TextoSuave}" Text="Comprobante" />
+                            <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding TipoTexto}" Margin="0,2,0,14" />
+
+                            <Grid Visibility="{Binding DiscriminaIva, Converter={StaticResource BoolAVisibilidad}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition /><RowDefinition />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Neto gravado" />
+                                <TextBlock Grid.Row="0" Text="{Binding Neto, StringFormat=C2}" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Row="1" Text="IVA" Margin="0,4,0,0" />
+                                <TextBlock Grid.Row="1" Text="{Binding Iva, StringFormat=C2}" HorizontalAlignment="Right" Margin="0,4,0,0" />
+                            </Grid>
+                            <Separator Margin="0,10" />
+                            <TextBlock Text="TOTAL" Style="{StaticResource TextoSuave}" />
+                            <TextBlock Style="{StaticResource TotalGrande}" Text="{Binding Total, StringFormat=C2}" />
+
+                            <Button Style="{StaticResource BotonPrimario}" Content="Emitir comprobante" Margin="0,18,0,0"
+                                    HorizontalAlignment="Stretch" Padding="0,10"
+                                    Command="{Binding EmitirCommand}"
+                                    IsEnabled="{Binding Emitiendo, Converter={StaticResource Negar}}" />
+                            <Button Style="{StaticResource BotonSecundario}" Content="Limpiar" Margin="0,8,0,0"
+                                    HorizontalAlignment="Stretch" Command="{Binding LimpiarCommand}" />
+                            <TextBlock Style="{StaticResource TextoSuave}" Margin="0,10,0,0" TextWrapping="Wrap" Text="Enviando a ARCA..."
+                                       Visibility="{Binding Emitiendo, Converter={StaticResource BoolAVisibilidad}}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= COMPROBANTES EMITIDOS ================= -->
+            <TabItem Header="  Comprobantes emitidos  ">
+                <DockPanel Margin="0,12,0,0">
+                    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock Text="Desde" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <DatePicker SelectedDate="{Binding Desde}" Width="130" />
+                        <TextBlock Text="Hasta" VerticalAlignment="Center" Margin="12,0,6,0" />
+                        <DatePicker SelectedDate="{Binding Hasta}" Width="130" />
+                        <Button Style="{StaticResource BotonSecundario}" Content="Buscar" Margin="12,0,0,0" Command="{Binding ListarCommand}" />
+                        <Button Style="{StaticResource BotonSecundario}" Content="Reintentar seleccionado" Command="{Binding ReintentarCommand}"
+                                IsEnabled="{Binding Emitiendo, Converter={StaticResource Negar}}" />
+                        <Button Style="{StaticResource BotonSecundario}" Content="Reintentar todos los pendientes"
+                                Command="{Binding ReintentarPendientesCommand}"
+                                IsEnabled="{Binding Emitiendo, Converter={StaticResource Negar}}" />
+                    </WrapPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource TextoSuave}" Margin="0,8,0,0" Text="{Binding EstadoLista}" />
+                    <TextBox DockPanel.Dock="Bottom" Margin="0,8,0,0" MinHeight="50" IsReadOnly="True" TextWrapping="Wrap"
+                             Text="{Binding ComprobanteSeleccionado.Mensajes, Mode=OneWay}" ToolTip="Mensajes de ARCA del comprobante elegido" />
+                    <DataGrid ItemsSource="{Binding Comprobantes}" SelectedItem="{Binding ComprobanteSeleccionado}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="90" />
+                            <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="130" />
+                            <DataGridTextColumn Header="Número" Binding="{Binding Numero}" Width="120" />
+                            <DataGridTextColumn Header="Unidad" Binding="{Binding UnidadNegocio}" Width="110" />
+                            <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="*" />
+                            <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="110"
+                                                ElementStyle="{StaticResource CeldaDerecha}" />
+                            <DataGridTextColumn Header="Estado" Binding="{Binding EstadoTexto}" Width="95" />
+                            <DataGridTextColumn Header="CAE" Binding="{Binding Cae}" Width="130" />
+                            <DataGridTextColumn Header="Vto. CAE" Binding="{Binding CaeVencimiento, StringFormat=dd/MM/yyyy}" Width="85" />
+                            <DataGridTextColumn Header="Entorno" Binding="{Binding Entorno}" Width="100" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</UserControl>

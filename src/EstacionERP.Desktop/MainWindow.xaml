@@ -64,12 +64,17 @@
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Caja"
                                      Command="{Binding NavegarCommand}" CommandParameter="Caja" />
                         <RadioButton Style="{StaticResource ItemMenu}" Content="Facturación ARCA"
+                                     Visibility="{Binding VerFacturacion, Converter={StaticResource BoolAVisibilidad}}"
                                      Command="{Binding NavegarCommand}" CommandParameter="Facturacion" />
 
-                        <StackPanel Visibility="{Binding VerUsuarios, Converter={StaticResource BoolAVisibilidad}}">
+                        <StackPanel Visibility="{Binding VerAdministracion, Converter={StaticResource BoolAVisibilidad}}">
                             <TextBlock Style="{StaticResource SeccionMenu}" Text="ADMINISTRACIÓN" />
                             <RadioButton Style="{StaticResource ItemMenu}" Content="Usuarios"
+                                         Visibility="{Binding VerUsuarios, Converter={StaticResource BoolAVisibilidad}}"
                                          Command="{Binding NavegarCommand}" CommandParameter="Usuarios" />
+                            <RadioButton Style="{StaticResource ItemMenu}" Content="Configuración fiscal"
+                                         Visibility="{Binding VerConfiguracionFiscal, Converter={StaticResource BoolAVisibilidad}}"
+                                         Command="{Binding NavegarCommand}" CommandParameter="ConfiguracionFiscal" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
